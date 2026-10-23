@@ -3,8 +3,8 @@ module github.com/nostosx/servex-examples
 go 1.27.3
 
 require (
-	github.com/nostosx/servex v0.0.0-00010101000000-000000000000
-	github.com/nostosx/servex-contrib/transport/grpcx v0.0.0-00010101000000-000000000000
+	github.com/nostosx/servex v1.0.0
+	github.com/nostosx/servex-contrib/transport/grpcx v1.0.0
 	google.golang.org/grpc v1.84.0
 )
 
@@ -16,7 +16,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
-
-replace github.com/nostosx/servex => ../servex
-
-replace github.com/nostosx/servex-contrib/transport/grpcx => ../servex-contrib/transport/grpcx
