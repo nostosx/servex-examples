@@ -1,6 +1,7 @@
 # Security
 
-These examples are pre-release demos and have no supported release series.
+Security fixes target the latest v1 source snapshot and current development
+code. Update to the latest snapshot before reporting a vulnerability.
 The HTTP and gRPC demos use loopback defaults and do not implement application
 authentication or TLS. They demonstrate lifecycle and transport APIs; exposure
 to an untrusted network requires application security policy.
@@ -14,5 +15,4 @@ guarantee is stated. Include the source revision and a synthetic reproducer.
 For a defect in an upstream library, follow that library's SECURITY.md instead:
 [servex](https://github.com/nostosx/servex/blob/main/SECURITY.md) or
 [servex-contrib](https://github.com/nostosx/servex-contrib/blob/main/SECURITY.md).
-These links identify the intended repository paths, not a claim that a remote
-reporting channel is already enabled. Ordinary bugs can use public issues.
+Ordinary bugs can use public issues.

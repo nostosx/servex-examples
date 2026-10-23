@@ -5,10 +5,10 @@ Keep each example focused on one composition of public APIs. Programs belong in
 Libraries keep their own godoc Example tests. Comments are English; keep both
 READMEs aligned with behavior.
 
-Read README.md for the required sibling checkouts. Use Go 1.27.3 and GNU Make
-with a POSIX shell (Git Bash on Windows). The Makefile sets `GOWORK=off`; local
-replacements resolve the unreleased core and contrib modules. kitx uses the
-published v1.0.0 and needs no local checkout. Do not commit a go.work file.
+Clone this repository on its own and use Go 1.27.3 and GNU Make with a POSIX
+shell (Git Bash on Windows). The Makefile sets `GOWORK=off`; core, contrib and
+kitx v1.0.0 resolve through the Go module proxy. No sibling checkouts or local
+replacements are needed. Do not commit a go.work file.
 
 ```sh
 make check
@@ -44,6 +44,6 @@ Never commit credentials or personal configuration.
 
 Describe behavior changes and checks in pull requests. Record user-visible
 changes in [CHANGELOG.md](CHANGELOG.md). Dependency updates also
-follow [RELEASING.md](RELEASING.md). Keep replacements until published versions
-have been selected and independently verified. For private security reports,
+follow [RELEASING.md](RELEASING.md). Select published versions and verify a
+standalone checkout before updating dependencies. For private security reports,
 see [SECURITY.md](SECURITY.md). Contributions use the [MIT license](LICENSE).

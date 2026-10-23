@@ -6,22 +6,20 @@
 独立模块为 `github.com/nostosx/servex-examples`，要求 Go 1.27.3。
 gRPC 示例使用标准 health API，无需生成 protobuf 代码。
 
-首个源码快照计划为 v1.0.0，尚未发布。快照版本标识示例源码及依赖，
+v1.0.0 源码快照使用已发布的 v1.0.0 库依赖。快照版本标识示例源码及依赖，
 不代表稳定的库 API。
 
 ## 本地运行
 
-将尚未发布的项目放在同一级，由 `go.mod` 中的相对 `replace` 解析依赖：
+使用 Go 1.27.3，独立克隆本仓库即可。依赖从 Go 模块代理下载，
+无需同级仓库或本地替换：
 
-```text
-nostosx/
-├── servex/
-├── servex-contrib/
-└── servex-examples/
+```sh
+git clone https://github.com/nostosx/servex-examples.git
+cd servex-examples
+GOWORK=off go mod download
 ```
 
-本模块替换尚未发布的 core 和 contrib transport 模块；kitx 使用发布的 v1.0.0，
-由 Go 模块代理下载，无需本地检出。
 从本目录分别在两个终端启动 HTTP 服务端和客户端：
 
 ```sh
@@ -60,10 +58,11 @@ make lint
 make vulncheck
 ```
 
-CI 将 core、contrib 放在同级目录，编译四个程序并执行检查，不依赖共享服务。
+CI 编译四个程序并执行检查，不依赖共享服务。servex、grpcx 和 kitx
+均使用已发布的 v1.0.0，无需同级源码检出或本地替换。
 本模块沿用 grpcx 的依赖版本，库不反向依赖示例。
-core 和 contrib 发布后再选择实际版本、移除对应替换、tidy 并重新检查。
-库旁的 godoc `Example` 测试继续保留。本项目没有发布工作流。
+依赖更新需要通过独立构建，随后发布新的源码快照。
+库旁的 godoc `Example` 测试继续保留。本项目没有自动发布工作流。
 工具安装与检查说明见 [CONTRIBUTING.md](CONTRIBUTING.md)，可重现快照及依赖更新见
 [RELEASING.md](RELEASING.md)，私密漏洞报告见 [SECURITY.md](SECURITY.md)，
 变更记录见 [CHANGELOG.md](CHANGELOG.md)。采用 [MIT 许可证](LICENSE)。

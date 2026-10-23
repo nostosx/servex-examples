@@ -6,24 +6,20 @@ Runnable HTTP and gRPC applications composing servex and servex-contrib.
 Go 1.27.3 module: `github.com/nostosx/servex-examples`. The gRPC programs use
 the generated standard health API, so no protobuf generation is needed.
 
-The first source snapshot is planned as v1.0.0 and has not been published.
+The v1.0.0 source snapshot uses published v1.0.0 library dependencies.
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
 ## Local setup
 
-Keep the local, unreleased projects side by side:
+Use Go 1.27.3. Clone this repository on its own; dependencies download from
+the Go module proxy, with no sibling checkouts or local replacements:
 
-```text
-nostosx/
-├── servex/
-├── servex-contrib/
-└── servex-examples/
+```sh
+git clone https://github.com/nostosx/servex-examples.git
+cd servex-examples
+GOWORK=off go mod download
 ```
-
-The module explicitly replaces the unreleased core and contrib transport module.
-kitx v1.0.0 downloads from the Go module proxy; no local checkout is needed.
-The module preserves grpcx dependency versions; libraries do not depend on examples.
 
 ## HTTP
 
@@ -66,11 +62,12 @@ make lint
 make vulncheck
 ```
 
-CI checks out servex and servex-contrib next to this project, builds all four
-programs and runs checks without shared external services. After the core and
-contrib modules are released, select versions and remove the corresponding
-replacements in this module, then tidy and check again. There is no publishing
-workflow.
+CI builds all four programs and runs checks without shared external services.
+It resolves servex, grpcx and kitx v1.0.0 from published modules without sibling
+checkouts or local replacements. The module preserves grpcx dependency versions;
+libraries do not depend on examples. Dependency updates must pass a standalone
+build before a new source snapshot is published. There is no automatic
+publishing workflow.
 Library godoc Example tests remain with the APIs they demonstrate.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for tool installation and check details,
 [RELEASING.md](RELEASING.md) for reproducible snapshots and dependency updates,
