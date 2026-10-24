@@ -38,6 +38,8 @@ timeout, ten-second read/write timeouts and a one-minute idle timeout.
 
 ## gRPC
 
+Run these in separate terminals from the repository root as well:
+
 ```sh
 GOWORK=off go run ./cmd/grpc-server
 GOWORK=off go run ./cmd/grpc-client
@@ -53,6 +55,17 @@ Both clients use a ten-second deadline. Servers stop on SIGINT/SIGTERM through
 GOWORK=off go run ./cmd/http-server -addr 127.0.0.1:8100
 GOWORK=off go run ./cmd/http-client -target http://127.0.0.1:8100
 ```
+
+For a custom gRPC port, use a `grpc://` target:
+
+```sh
+GOWORK=off go run ./cmd/grpc-server -addr 127.0.0.1:9100
+GOWORK=off go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+```
+
+Stop each server with Ctrl+C. Both examples use plaintext connections without
+application authentication. Keep them on loopback; configure authentication,
+authorization and TLS before exposing an adapted service.
 
 ## Checks
 

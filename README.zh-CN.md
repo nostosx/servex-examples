@@ -50,6 +50,16 @@ GOWORK=off go run ./cmd/http-server -addr 127.0.0.1:8100
 GOWORK=off go run ./cmd/http-client -target http://127.0.0.1:8100
 ```
 
+指定 gRPC 端口时，客户端目标需带 `grpc://`：
+
+```sh
+GOWORK=off go run ./cmd/grpc-server -addr 127.0.0.1:9100
+GOWORK=off go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+```
+
+使用 Ctrl+C 停止各服务。两个示例均使用明文连接，没有应用鉴权。
+请保持回环监听；对外提供改造后的服务前，应配置认证、授权和 TLS。
+
 ## 检查
 
 ```sh

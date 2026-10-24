@@ -5,6 +5,9 @@ establish a stable library API.
 
 ## Unreleased
 
+- Clarify terminal usage, custom gRPC target URLs and the examples' plaintext,
+  unauthenticated connection boundary.
+
 ## v1.0.0
 
 Release date: 2026-10-23.
