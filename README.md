@@ -6,7 +6,7 @@ Runnable HTTP and gRPC applications composing servex and servex-contrib.
 Go 1.27.3 module: `github.com/nostosx/servex-examples`. The gRPC programs use
 the generated standard health API, so no protobuf generation is needed.
 
-The v1.0.0 source snapshot uses published v1.0.0 library dependencies.
+The v1.1.0 source snapshot uses published servex v1.2.0 and grpcx v1.1.0.
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
@@ -76,7 +76,7 @@ make vulncheck
 ```
 
 CI builds all four programs and runs checks without shared external services.
-It resolves servex, grpcx and kitx v1.0.0 from published modules without sibling
+It resolves servex v1.2.0, grpcx v1.1.0 and kitx v1.0.0 from published modules without sibling
 checkouts or local replacements. The module preserves grpcx dependency versions;
 libraries do not depend on examples. Dependency updates must pass a standalone
 build before a new source snapshot is published. There is no automatic

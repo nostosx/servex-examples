@@ -23,9 +23,9 @@ func run() error {
 func newApp(addr string) (*app.App, *grpcx.Server) {
 	var a *app.App
 	srv := grpcx.NewServer(
-		grpcx.Address(addr),
-		grpcx.Health(health.CheckerFunc(func(ctx context.Context) error { return a.Check(ctx) })),
-		// grpcx.Middleware(...) adds servex server middleware for unary calls.
+		grpcx.WithAddress(addr),
+		grpcx.WithHealth(health.CheckerFunc(func(ctx context.Context) error { return a.Check(ctx) })),
+		// grpcx.WithMiddleware(...) adds servex server middleware for unary calls.
 	)
 
 	a = app.New(app.WithHooks(srv))

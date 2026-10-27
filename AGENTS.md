@@ -7,7 +7,7 @@ then the relevant Go skills. Read README.md, CONTRIBUTING.md and
 - Go 1.27.3; runnable commands live in cmd/, shared private helpers in internal/.
 - Compose public APIs with explicit parameters. Do not add a DI container or
   move application wiring back into the libraries.
-- Core, contrib and kitx dependencies use published v1.0.0 versions without
+- Core, contrib and kitx dependencies use published versions without
   local replacements. Keep standalone builds reproducible with GOWORK=off;
   do not commit go.work files or sibling checkout requirements.
 - Code comments are English. Preserve package-level Example tests in libraries.

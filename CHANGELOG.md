@@ -3,8 +3,14 @@
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
-## Unreleased
+## v1.1.0
 
+Release date: 2026-10-27.
+
+- Require published servex v1.2.0 and servex-contrib transport/grpcx v1.1.0.
+- http-server registers its handler with `httpx.RouteFunc` instead of a type
+  assertion, and both servers use the `With*` option names of servex v1.2.0
+  and grpcx v1.1.0.
 - Clarify terminal usage, custom gRPC target URLs and the examples' plaintext,
   unauthenticated connection boundary.
 

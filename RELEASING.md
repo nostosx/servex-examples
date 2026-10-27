@@ -7,12 +7,12 @@ automatic release workflow.
 
 ## Published dependencies
 
-The v1.0.0 snapshot uses these released modules, with no local replacements:
+The v1.1.0 snapshot uses these released modules, with no local replacements:
 
 | Module | Version |
 |---|---|
-| `github.com/nostosx/servex` | v1.0.0 |
-| `github.com/nostosx/servex-contrib/transport/grpcx` | v1.0.0 |
+| `github.com/nostosx/servex` | v1.2.0 |
+| `github.com/nostosx/servex-contrib/transport/grpcx` | v1.1.0 |
 | `github.com/nostosx/kitx` | v1.0.0 |
 
 For subsequent snapshots, publish and verify upstream core and contrib versions

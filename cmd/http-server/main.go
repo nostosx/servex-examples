@@ -22,8 +22,7 @@ type user struct {
 	Name string `json:"name"`
 }
 
-func getUser(_ context.Context, req any) (any, error) {
-	r := req.(*getUserRequest)
+func getUser(_ context.Context, r *getUserRequest) (*user, error) {
 	if r.ID <= 0 {
 		return nil, errorx.New(errorx.InvalidArgument, "INVALID_ID", "id must be positive")
 	}
@@ -42,17 +41,18 @@ func run() error {
 func newApp(addr string) (*app.App, *httpx.Server) {
 	var a *app.App
 	srv := httpx.NewServer(
-		httpx.Address(addr),
-		httpx.ReadHeaderTimeout(5*time.Second),
-		httpx.ReadTimeout(10*time.Second),
-		httpx.WriteTimeout(10*time.Second),
-		httpx.IdleTimeout(time.Minute),
-		httpx.MaxBodyBytes(64<<10),
+		httpx.WithAddress(addr),
+		httpx.WithReadHeaderTimeout(5*time.Second),
+		httpx.WithReadTimeout(10*time.Second),
+		httpx.WithWriteTimeout(10*time.Second),
+		httpx.WithIdleTimeout(time.Minute),
+		httpx.WithMaxBodyBytes(64<<10),
 		// Readiness follows the application lifecycle through a.Check.
-		httpx.Health(health.CheckerFunc(func(ctx context.Context) error { return a.Check(ctx) })),
+		httpx.WithHealth(health.CheckerFunc(func(ctx context.Context) error { return a.Check(ctx) })),
 	)
 	// Route parameters bind by JSON field name and take precedence over query values.
-	httpx.Route[getUserRequest](srv, "GET /v1/users/{id}", getUser)
+	// RouteFunc keeps the request type and the handler in step.
+	httpx.RouteFunc(srv, "GET /v1/users/{id}", getUser)
 
 	a = app.New(app.WithHooks(srv))
 	return a, srv

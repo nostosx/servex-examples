@@ -27,7 +27,7 @@ func TestCheckHealth(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 			defer cancel()
-			srv := grpcx.NewServer(grpcx.Address("127.0.0.1:0"), grpcx.Health(health.CheckerFunc(func(context.Context) error {
+			srv := grpcx.NewServer(grpcx.WithAddress("127.0.0.1:0"), grpcx.WithHealth(health.CheckerFunc(func(context.Context) error {
 				if !tt.ready {
 					return errors.New("not ready")
 				}
