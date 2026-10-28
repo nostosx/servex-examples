@@ -2,8 +2,9 @@
 
 Security fixes target the latest v1 source snapshot and current development
 code. Update to the latest snapshot before reporting a vulnerability.
-The HTTP and gRPC demos use loopback defaults and do not implement application
-authentication or TLS. They demonstrate lifecycle and transport APIs; exposure
+HTTP and gRPC require literal loopback IPs and use plaintext. gRPC requires
+API_TOKEN (at least 32 printable non-whitespace ASCII characters). HTTP user
+routes are public local demonstrations. They demonstrate lifecycle and transport APIs; exposure
 to an untrusted network requires application security policy.
 
 For a vulnerability in example wiring, use this repository's GitHub

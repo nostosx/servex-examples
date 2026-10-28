@@ -3,6 +3,36 @@
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
+## Unreleased
+
+## v1.2.0
+
+Release date: 2026-10-28.
+
+- Select published servex v1.3.0 and transport/grpcx v1.2.0.
+
+- Consolidate public Task commands to check/test/build/lint/vulncheck/fmt/fix/tidy;
+  race and coverage use `task test RACE=true COVER=true`, with checks kept internal.
+  Contract operations share `task api ACTION=generate|lint|check|breaking`; check remains the default.
+
+- Explicitly select HTTP and gRPC in the CLI scaffold recipe. Native HTTP and
+  gRPC adapters share the user query; HTTP does not require a gateway binding.
+
+- Adopt one actual CLI-generated application per repository: domain/application,
+  shared infrastructure, service app.go files, private adapters and Proto
+  contracts with generated Go. See CLI-GENERATION.md for generation and extensions.
+- Share the user query between typed HTTP and generated GetUser gRPC adapters.
+- **Breaking (example startup):** cmd/http-server and cmd/grpc-server are replaced by cmd/server and
+  services/user/cmd/user; both start HTTP and gRPC. Defaults are HTTP 8080 / gRPC
+  9090; gRPC requires API_TOKEN and both listeners require literal loopback IPs.
+
+- Use config.Parse in commands and service.Run(ctx, cfg) in app.go for shared
+  assembly. Register only mounts handlers; server.New only constructs transports.
+
+- Development tooling: replace Make entry points with Task v3.53.1 in local
+  checks, CI and contribution/release instructions. Use `task check`, `task lint`
+  and `task vulncheck`; check coverage, build tags and failure gates are preserved.
+
 ## v1.1.0
 
 Release date: 2026-10-27.

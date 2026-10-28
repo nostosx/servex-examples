@@ -2,87 +2,102 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Runnable HTTP and gRPC applications composing servex and servex-contrib.
-Go 1.27.3 module: `github.com/nostosx/servex-examples`. The gRPC programs use
-the generated standard health API, so no protobuf generation is needed.
+A single Go application generated with nostosx-cli, then extended with a user
+query demonstrated over typed servex HTTP and generated gRPC. The module is
+`github.com/nostosx/servex-examples`; use Go 1.27.3 and Task 3.53.1.
+Snapshot v1.2.0 uses published servex v1.3.0 and grpcx v1.2.0, without sibling
+checkouts, local replacements or a go.work file.
 
-The v1.1.0 source snapshot uses published servex v1.2.0 and grpcx v1.1.0.
-Snapshot versions identify example source and dependencies; they do not
-establish a stable library API.
+## Layout and generation
 
-## Local setup
+```text
+cmd/                         thin command entries; cmd/server calls user.Run
+domain/user/                 domain declarations and the user value
+application/                 user/query/GetUser shared by both adapters
+infrastructure/              configuration, server and RPC boundaries
+services/user/               app.go, private HTTP/RPC adapters and cmd/user
+api/proto/user/v1/            source contracts
+api/gen/go/user/v1/           generated Go and gRPC code
+```
+`cmd/server` and `services/user/cmd/user` parse configuration and call
+`user.Run(ctx, cfg)`. The service app.go explicitly registers handlers with the
+shared transport constructors. Both expose HTTP
+and gRPC; there is no separate HTTP-only or gRPC-only server implementation.
+HTTP and RPC adapters call the same application query. Domain/application code
+does not import generated contracts or transports.
 
-Use Go 1.27.3. Clone this repository on its own; dependencies download from
-the Go module proxy, with no sibling checkouts or local replacements:
+The repository was built using actual CLI `new`, `add context`, `add service`
+and `add api` commands. See [CLI-GENERATION.md](CLI-GENERATION.md) for the exact
+recipe and the application-owned extensions. Generated output is committed;
+ordinary builds do not invoke the CLI or require Buf.
+
+## Run
 
 ```sh
 git clone https://github.com/nostosx/servex-examples.git
 cd servex-examples
-GOWORK=off go mod download
+export GOWORK=off
+go mod download
+export API_TOKEN="$(openssl rand -hex 32)"
+go run ./cmd/server
 ```
+`API_TOKEN` must contain at least 32 printable ASCII characters without whitespace.
+The default listeners are `127.0.0.1:8080` and `127.0.0.1:9090`.
+HTTP health and the user route are public local demonstrations; gRPC requires
+`authorization: Bearer <API_TOKEN>`. Both listeners require literal loopback IPs.
 
-## HTTP
-
-Run the server and client in separate terminals from this directory:
+In a second terminal, set the same token and run:
 
 ```sh
-GOWORK=off go run ./cmd/http-server
-GOWORK=off go run ./cmd/http-client
+export GOWORK=off
+# Set API_TOKEN to the same value as the server.
+go run ./cmd/http-client
+go run ./cmd/grpc-client
+curl http://127.0.0.1:8080/v1/users/7
+curl http://127.0.0.1:8080/readyz
 ```
 
-The server listens on 127.0.0.1:8000. The client prints `alice`.
-`GET /v1/users/7` returns `{"id":7,"name":"alice"}`; ID zero returns a
-structured InvalidArgument error. `/readyz` follows the application lifecycle.
-Requests are limited to 64 KiB. The HTTP server sets a five-second header
-timeout, ten-second read/write timeouts and a one-minute idle timeout.
+The HTTP client prints `alice`; the gRPC health client prints `SERVING`.
+`GET /v1/users/7` returns `{"id":7,"name":"alice"}` and nonpositive IDs
+return a structured InvalidArgument error. The generated `user.v1.UserService/GetUser`
+RPC returns the same data and rejects unauthenticated requests.
 
-## gRPC
-
-Run these in separate terminals from the repository root as well:
+To run the independently deployable service instead of the combined host:
 
 ```sh
-GOWORK=off go run ./cmd/grpc-server
-GOWORK=off go run ./cmd/grpc-client
+go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
+go run ./cmd/http-client -target http://127.0.0.1:8100
+go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
 ```
 
-The server listens on 127.0.0.1:9000. The client checks the standard health
-service and prints `SERVING`. Its status follows application readiness.
-The client returns an error for any status other than `SERVING`.
-Both clients use a ten-second deadline. Servers stop on SIGINT/SIGTERM through
-`app.SignalContext`; server flags use `-addr`, client flags use `-target`:
+Stop with Ctrl+C. Readiness follows the application lifecycle. HTTP retains the
+64 KiB request limit, five-second header timeout, ten-second read/write timeouts
+and one-minute idle timeout. Both clients have a ten-second deadline.
+Connections are plaintext; add TLS and application authorization before external use.
+
+## Checks and contracts
 
 ```sh
-GOWORK=off go run ./cmd/http-server -addr 127.0.0.1:8100
-GOWORK=off go run ./cmd/http-client -target http://127.0.0.1:8100
+task check
+task lint
+task vulncheck
+task api
 ```
 
-For a custom gRPC port, use a `grpc://` target:
+The eight common tasks are `check`, `test`, `build`, `lint`, `vulncheck`, `fmt`,
+`fix` and `tidy`; bare `task` runs `check`. Use `task --list` to view them,
+`task test RACE=true` for race detection, and `task test RACE=true COVER=true`
+for race coverage in `coverage.out`. Check helpers are internal.
+This repository also exposes `task api ACTION=generate|lint|check|breaking`;
+`task api` defaults to check (including lint), and breaking requires `API_BASE`.
 
-```sh
-GOWORK=off go run ./cmd/grpc-server -addr 127.0.0.1:9100
-GOWORK=off go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
-```
+`check` includes normal and integration builds and shuffled race tests with local
+HTTP/gRPC fixtures. It exercises both user adapters, gRPC authentication and shutdown.
+There are no smoke jobs, Python scripts or external-service requirements.
+Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.2.0; use `NOSTOSX`
+to select a CLI binary built from a checkout. Run `task api ACTION=generate`, review the
+generated diff, then `task api` after editing Proto sources.
 
-Stop each server with Ctrl+C. Both examples use plaintext connections without
-application authentication. Keep them on loopback; configure authentication,
-authorization and TLS before exposing an adapted service.
-
-## Checks
-
-```sh
-make check
-make lint
-make vulncheck
-```
-
-CI builds all four programs and runs checks without shared external services.
-It resolves servex v1.2.0, grpcx v1.1.0 and kitx v1.0.0 from published modules without sibling
-checkouts or local replacements. The module preserves grpcx dependency versions;
-libraries do not depend on examples. Dependency updates must pass a standalone
-build before a new source snapshot is published. There is no automatic
-publishing workflow.
-Library godoc Example tests remain with the APIs they demonstrate.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for tool installation and check details,
-[RELEASING.md](RELEASING.md) for reproducible snapshots and dependency updates,
-[CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
-private reports. Licensed under the [MIT License](LICENSE).
+The v1.1.0 tag remains a historical source snapshot; development uses the layout
+described here. See [CONTRIBUTING.md](CONTRIBUTING.md), [RELEASING.md](RELEASING.md),
+[CHANGELOG.md](CHANGELOG.md) and [SECURITY.md](SECURITY.md). Licensed under [MIT](LICENSE).

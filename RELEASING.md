@@ -7,12 +7,12 @@ automatic release workflow.
 
 ## Published dependencies
 
-The v1.1.0 snapshot uses these released modules, with no local replacements:
+The v1.2.0 snapshot uses these released modules, with no local replacements:
 
 | Module | Version |
 |---|---|
-| `github.com/nostosx/servex` | v1.2.0 |
-| `github.com/nostosx/servex-contrib/transport/grpcx` | v1.1.0 |
+| `github.com/nostosx/servex` | v1.3.0 |
+| `github.com/nostosx/servex-contrib/transport/grpcx` | v1.2.0 |
 | `github.com/nostosx/kitx` | v1.0.0 |
 
 For subsequent snapshots, publish and verify upstream core and contrib versions
@@ -24,16 +24,16 @@ checkouts or a workspace file as release acceptance.
 
 1. Start from a clean checkout on `main`. Review both READMEs, the selected
    versions and the dated entry in [CHANGELOG.md](CHANGELOG.md).
-2. Run `make check`, `make lint` and `make vulncheck` with Go 1.27.3.
+2. Run `task check`, `task lint`, `task vulncheck` and `task api` with Go 1.27.3.
    Confirm every hosted CI job passes at the exact commit to be tagged.
 3. Copy or clone the project into a temporary directory with no sibling
    repositories. With `GOWORK=off`, download dependencies, run `go mod verify`
    and build all commands using `go build -mod=readonly ./...`.
-4. Complete the relevant local smoke checks below. Record the source revision,
+4. Complete the normal and integration tests. Record the source revision,
    exact dependency versions, toolchain, check results and known limitations
    in the release notes. Do not describe unrun live integrations as validated.
 
-Run each HTTP and gRPC server/client pair on unused loopback ports. Verify
+Run the combined host or standalone user service and both clients on unused loopback ports with API_TOKEN. Verify
 the documented responses and stop the servers with SIGINT or SIGTERM. These
 checks do not require databases, brokers or shared infrastructure.
 
