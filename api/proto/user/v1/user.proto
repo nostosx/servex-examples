@@ -1,0 +1,8 @@
+syntax = "proto3";
+import "user/v1/get_user.proto";
+package user.v1;
+option go_package = "github.com/nostosx/servex-examples/api/gen/go/user/v1;userv1";
+// UserService declares this service's public contract. Add business RPCs explicitly.
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}

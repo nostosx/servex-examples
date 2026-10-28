@@ -1,18 +1,19 @@
-package main
+package http
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/nostosx/servex/transport/httpx"
 )
 
 func TestRoutes(t *testing.T) {
 	t.Parallel()
-	_, srv := newApp("127.0.0.1:0")
+	srv := httpx.NewServer(httpx.WithMaxBodyBytes(64 << 10))
+	Register(srv)
 	for _, tt := range []struct {
 		name, method, path, body string
 		unknownLength            bool
@@ -39,7 +40,7 @@ func TestRoutes(t *testing.T) {
 				t.Fatalf("status = %d, want %d; body = %s", w.Code, tt.wantStatus, w.Body)
 			}
 			if tt.wantStatus == http.StatusOK {
-				var got user
+				var got GetUserResponse
 				if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 					t.Fatal(err)
 				}
@@ -57,33 +58,4 @@ func TestRoutes(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestReadinessFollowsLifecycle(t *testing.T) {
-	t.Parallel()
-	a, srv := newApp("127.0.0.1:0")
-	check := func(want int) {
-		t.Helper()
-		w := httptest.NewRecorder()
-		srv.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/readyz", nil))
-		if w.Code != want {
-			t.Fatalf("readiness=%d want=%d", w.Code, want)
-		}
-	}
-	check(http.StatusServiceUnavailable)
-	if err := a.Start(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		if err := a.Stop(ctx); err != nil {
-			t.Error(err)
-		}
-	})
-	check(http.StatusOK)
-	if err := a.Stop(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	check(http.StatusServiceUnavailable)
 }

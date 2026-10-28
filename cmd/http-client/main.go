@@ -21,7 +21,7 @@ type user struct {
 }
 
 func run() error {
-	target := flag.String("target", "http://127.0.0.1:8000", "server URL")
+	target := flag.String("target", "http://127.0.0.1:8080", "server URL")
 	flag.Parse()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

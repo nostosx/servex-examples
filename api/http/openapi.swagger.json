@@ -1,0 +1,20 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "definitions": {},
+  "info": {
+    "title": "Application API",
+    "version": "v1"
+  },
+  "paths": {},
+  "produces": [
+    "application/json"
+  ],
+  "swagger": "2.0",
+  "tags": [
+    {
+      "name": "UserService"
+    }
+  ]
+}

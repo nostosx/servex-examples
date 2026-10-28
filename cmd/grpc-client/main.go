@@ -3,12 +3,15 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/nostosx/servex-contrib/transport/grpcx"
 )
@@ -16,8 +19,13 @@ import (
 func run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	target := flag.String("target", "grpc://127.0.0.1:9000", "server URL")
+	target := flag.String("target", "grpc://127.0.0.1:9090", "server URL")
 	flag.Parse()
+	token := os.Getenv("API_TOKEN")
+	if token == "" {
+		return errors.New("API_TOKEN is required")
+	}
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
 	status, err := checkHealth(ctx, *target)
 	if err != nil {
 		return err

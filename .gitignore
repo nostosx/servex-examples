@@ -10,3 +10,5 @@
 !/.env.example
 *.prof
 .DS_Store
+/coverage.txt
+/.nostosx.lock
