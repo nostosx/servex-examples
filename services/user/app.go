@@ -7,9 +7,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/nostosx/servex-contrib/transport/httpx"
 	"github.com/nostosx/servex/app"
 	"github.com/nostosx/servex/health"
-	"github.com/nostosx/servex/transport/httpx"
 
 	"github.com/nostosx/servex-examples/infrastructure/config"
 	"github.com/nostosx/servex-examples/infrastructure/server"

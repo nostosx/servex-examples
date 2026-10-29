@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nostosx/servex/transport/httpx"
+	"github.com/nostosx/servex-contrib/transport/httpx"
 )
 
 func TestRoutes(t *testing.T) {

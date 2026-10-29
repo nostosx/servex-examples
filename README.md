@@ -1,5 +1,11 @@
 # servex-examples
 
+Current unreleased source moves the HTTP backend to servex-contrib/transport/httpx
+and its shared outbound client to servex-contrib/transport/client.
+It requires matching unpublished core/contrib sources; the declared adapter
+versions prepare a coordinated release. Published tags retain their original
+dependencies. Refresh versions and checksums before public-proxy acceptance.
+
 English | [简体中文](README.zh-CN.md)
 
 A single Go application generated with nostosx-cli, then extended with a user

@@ -5,6 +5,14 @@ establish a stable library API.
 
 ## Unreleased
 
+- Add the unreleased servex-contrib/transport/client module required by the
+  matching HTTP/gRPC backends. Refresh its actual version and checksum during
+  the coordinated release.
+
+- Migrate HTTP imports and dependencies to servex-contrib/transport/httpx.
+  This source revision requires matching unreleased core and contrib backends;
+  public-proxy consumer verification remains a coordinated-release gate.
+
 ## v1.2.0
 
 Release date: 2026-10-28.

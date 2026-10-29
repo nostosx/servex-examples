@@ -4,8 +4,8 @@ package http
 import (
 	"context"
 
+	"github.com/nostosx/servex-contrib/transport/httpx"
 	"github.com/nostosx/servex-examples/application/user/query"
-	"github.com/nostosx/servex/transport/httpx"
 )
 
 type GetUserRequest struct {

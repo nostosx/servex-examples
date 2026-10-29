@@ -76,3 +76,8 @@ imports out of domain and application; assemble dependencies through app.go.
 Use `task api ACTION=lint` for lint alone; `task api` defaults to `ACTION=check`
 and preserves both lint and generated-output checks. `task api ACTION=breaking API_BASE=<revision>` requires an explicit compatibility baseline. Invalid actions
 and a missing breaking baseline fail before invoking the CLI.
+
+The current HTTP backend and shared client migration is unreleased. Validate matching core and
+contrib source revisions through throwaway module overrides, never repository
+replace directives. Refresh actual dependency versions/checksums and rerun the
+standalone public-proxy gates after those libraries are published.

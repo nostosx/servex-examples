@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/nostosx/servex/transport/httpx"
+	"github.com/nostosx/servex-contrib/transport/httpx"
 )
 
 type getUserRequest struct {

@@ -5,12 +5,16 @@ go 1.27.3
 require (
 	github.com/nostosx/servex v1.3.0
 	github.com/nostosx/servex-contrib/transport/grpcx v1.2.0
+	github.com/nostosx/servex-contrib/transport/httpx v1.0.0
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 )
 
 require (
 	github.com/nostosx/kitx v1.0.0 // indirect
+	github.com/nostosx/servex-contrib/encoding/json v1.0.0 // indirect
+	github.com/nostosx/servex-contrib/selector v1.1.0 // indirect
+	github.com/nostosx/servex-contrib/transport/client v1.0.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
