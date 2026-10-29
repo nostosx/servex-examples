@@ -5,6 +5,11 @@ establish a stable library API.
 
 ## Unreleased
 
+## v1.3.0 - 2026-10-29
+
+- Adopt published servex v1.4.0 and independent contrib HTTP, configuration
+  and logging adapters; resolve dependencies without source replacements.
+
 - Use readable console text and separate JSON file encoding with timestamps,
   uppercase levels and caller locations. Preserve structured fields, support
   log_file/APP_LOG_FILE/--log-file and rotate optional files with lumberjack.

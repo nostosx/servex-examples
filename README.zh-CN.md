@@ -1,15 +1,13 @@
 # servex-examples
 
-当前未发布源码已将 HTTP 后端迁至 servex-contrib/transport/httpx，
-共享出站客户端迁至 servex-contrib/transport/client；
-需要配套的未发布核心与 contrib 源码。依赖坐标用于准备配套发布；
-已发布标签保留原有依赖，公开代理验收须在更新真实版本与校验和后完成。
+本快照使用公开发布的 servex v1.4.0，以及独立的 contrib HTTP、配置和日志模块，
+无需同级源码或本地 replace。
 
 [English](README.md) | 简体中文
 
 使用 nostosx-cli 实际生成的单模块 Go 工程，再补入用户查询示例，展示 servex 类型化
 HTTP 路由与生成的 gRPC 服务。模块为 `github.com/nostosx/servex-examples`，
-使用 Go 1.27.3、Task 3.53.1；依赖公开发布的 servex v1.3.0 和 grpcx v1.2.0，
+使用 Go 1.27.3、Task 3.53.1；依赖公开发布的 servex v1.4.0 和 grpcx v1.3.0，
 无需同级仓库、本地 replace 或 go.work。
 
 ## 目录与生成
@@ -114,7 +112,7 @@ task api
 
 `check` 包含默认及 integration 构建、随机顺序 race 测试，通过本地 HTTP/gRPC fixture
 检查查询、认证和退出。没有 smoke job、Python 脚本或外部服务依赖。
-契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.2.0；可通过 `NOSTOSX` 指向
+契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.3.0；可通过 `NOSTOSX` 指向
 从源码构建的 CLI。修改 Proto 后运行 `task api ACTION=generate`、审查生成差异并运行 `task api`。
 
 v1.1.0 标签仍标识历史源码快照，当前开发版本使用上述结构。

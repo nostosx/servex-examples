@@ -1,17 +1,14 @@
 # servex-examples
 
-Current unreleased source moves the HTTP backend to servex-contrib/transport/httpx
-and its shared outbound client to servex-contrib/transport/client.
-It requires matching unpublished core/contrib sources; the declared adapter
-versions prepare a coordinated release. Published tags retain their original
-dependencies. Refresh versions and checksums before public-proxy acceptance.
+This snapshot uses published servex v1.4.0 and the independent contrib
+HTTP/configuration/logging modules, without sibling source replacements.
 
 English | [简体中文](README.zh-CN.md)
 
 A single Go application generated with nostosx-cli, then extended with a user
 query demonstrated over typed servex HTTP and generated gRPC. The module is
 `github.com/nostosx/servex-examples`; use Go 1.27.3 and Task 3.53.1.
-Snapshot v1.2.0 uses published servex v1.3.0 and grpcx v1.2.0, without sibling
+Snapshot v1.3.0 uses published servex v1.4.0 and grpcx v1.3.0, without sibling
 checkouts, local replacements or a go.work file.
 
 ## Layout and generation
@@ -123,7 +120,7 @@ This repository also exposes `task api ACTION=generate|lint|check|breaking`;
 `check` includes normal and integration builds and shuffled race tests with local
 HTTP/gRPC fixtures. It exercises both user adapters, gRPC authentication and shutdown.
 There are no smoke jobs, Python scripts or external-service requirements.
-Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.2.0; use `NOSTOSX`
+Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.3.0; use `NOSTOSX`
 to select a CLI binary built from a checkout. Run `task api ACTION=generate`, review the
 generated diff, then `task api` after editing Proto sources.
 

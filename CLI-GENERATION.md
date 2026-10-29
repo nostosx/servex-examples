@@ -1,12 +1,12 @@
 # CLI generation and application extensions
 
-This repository is one Go module, generated from the nostosx-cli v1.2.0
+This repository is one Go module, generated from the nostosx-cli v1.3.0
 with the monolith layout. The CLI implementation, templates and tests live
 in their own repository; normal builds never read sibling source.
 
 ## Create the foundation
 
-Install CLI v1.2.0 outside this application module. Set NOSTOSX to the
+Install CLI v1.3.0 outside this application module. Set NOSTOSX to the
 nostosx executable's absolute path. Use a new
 output directory: generation and additions reject overwriting existing files.
 The commands below were used to establish this repository's foundation:
@@ -52,7 +52,7 @@ task check lint vulncheck
 task api NOSTOSX="$NOSTOSX"
 ```
 
-The Taskfile defaults contract operations to CLI v1.2.0 through go run, without
+The Taskfile defaults contract operations to CLI v1.3.0 through go run, without
 adding it to go.mod. Use the NOSTOSX override when validating unreleased CLI code.
 No generation shell/Python script, smoke job, extra module or go.work is needed.
 CI checks the actual checked-in application on Linux/macOS/Windows and checks

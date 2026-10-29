@@ -3,10 +3,10 @@ module github.com/nostosx/servex-examples
 go 1.27.3
 
 require (
-	github.com/nostosx/servex v1.3.0
+	github.com/nostosx/servex v1.4.0
 	github.com/nostosx/servex-contrib/config/viper v1.0.0
 	github.com/nostosx/servex-contrib/logger/zap v1.0.0
-	github.com/nostosx/servex-contrib/transport/grpcx v1.2.0
+	github.com/nostosx/servex-contrib/transport/grpcx v1.3.0
 	github.com/nostosx/servex-contrib/transport/httpx v1.0.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.84.0
@@ -19,7 +19,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/nostosx/kitx v1.0.0 // indirect
 	github.com/nostosx/servex-contrib/encoding/json v1.0.0 // indirect
-	github.com/nostosx/servex-contrib/selector v1.1.0 // indirect
+	github.com/nostosx/servex-contrib/selector v1.2.0 // indirect
 	github.com/nostosx/servex-contrib/transport/client v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
