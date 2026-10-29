@@ -15,7 +15,8 @@ HTTP 路由与生成的 gRPC 服务。模块为 `github.com/nostosx/servex-examp
 ## 目录与生成
 
 ```text
-cmd/                         精简命令入口；cmd/server 调用 user.Run
+app.go                       单体 Run，复用单服务装配
+cmd/                         精简命令入口；cmd/server 调用 application.Run
 domain/user/                 用户领域值
 application/user/query/      HTTP 与 RPC 共用的 GetUser 查询
 infrastructure/              配置、传输构造与 RPC 边界
@@ -24,8 +25,9 @@ api/proto/user/v1/           契约源文件
 api/gen/go/user/v1/          生成的 Go/gRPC 代码
 ```
 
-`cmd/server` 与独立入口 `services/user/cmd/user` 解析配置后调用
-`user.Run(ctx, cfg)`，服务的 `app.go` 使用共享传输构造函数并显式注册处理器。
+`cmd/server` 解析配置后调用根目录 `app.go` 的 `Run(ctx, cfg)`，后者复用
+`user.Run`；独立入口 `services/user/cmd/user` 直接调用 `user.Run`。
+服务的 `app.go` 使用共享传输构造函数并显式注册处理器。
 两种入口均暴露 HTTP 和 gRPC，
 不再分别维护 HTTP-only、gRPC-only 服务端。两个适配器调用同一个应用查询；
 领域及应用层不依赖生成代码或传输层。
@@ -33,6 +35,23 @@ api/gen/go/user/v1/          生成的 Go/gRPC 代码
 本仓库实际通过 CLI 的 `new`、`add context`、`add service`、`add api`
 创建，再补入示例实现。完整步骤与定制范围见 [CLI-GENERATION.md](CLI-GENERATION.md)。
 生成结果随源码保存，普通构建不执行 CLI，也不需要 Buf。
+
+配置由 infrastructure/config.Load 使用 contrib Viper 读取，优先级为：
+默认值 < config.yaml < 环境变量 < 显式参数。默认配置文件可缺省；
+--config 指定的文件必须存在。APP_ADDRESS、APP_LOG_LEVEL、APP_TOKEN 覆盖文件配置，
+APP_TOKEN 优先于原有的 API_TOKEN；servex 示例还支持 APP_GRPC_ADDRESS。
+--log-level 选择 Zap 日志级别，默认 info。装配入口创建 contrib Zap 控制台文本和可选 JSON 文件 Logger，
+通过核心 Logger 接口注入应用和传输边界，并在关闭后 flush。
+
+控制台以 [模块] 消息 [字段:值] 展示事件，常用字段显示为 [操作:…]、
+[耗时:…]、[状态:…]、[错误:…]。消息及字段中的换行、制表符转义为文本，
+每个事件只占一行；模块优先取 component，缺省使用调用者包名。
+控制台使用本地时间（格式为 2026-10-29 17:13:50）、大写级别、简短调用位置和易读耗时；
+文件每行写一个 JSON 对象，使用相同的秒级本地时间及以秒为单位的数值耗时。
+两种输出都保留独立业务字段。通过 config.yaml 的 log_file、APP_LOG_FILE
+或 --log-file 开启文件输出，显式传入空的 --log-file 可关闭文件输出。
+默认只输出控制台；启用文件后，通过 lumberjack v2.2.1 按 100 MiB 轮转，
+最多保留五个备份、七天并压缩。每个服务进程使用独立文件路径，所有使用者停止后关闭 Logger。
 
 ## 运行
 

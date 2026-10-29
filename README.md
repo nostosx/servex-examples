@@ -17,7 +17,8 @@ checkouts, local replacements or a go.work file.
 ## Layout and generation
 
 ```text
-cmd/                         thin command entries; cmd/server calls user.Run
+app.go                       monolith Run; reuses the single service assembly
+cmd/                         thin command entries; cmd/server calls application.Run
 domain/user/                 domain declarations and the user value
 application/                 user/query/GetUser shared by both adapters
 infrastructure/              configuration, server and RPC boundaries
@@ -25,8 +26,9 @@ services/user/               app.go, private HTTP/RPC adapters and cmd/user
 api/proto/user/v1/            source contracts
 api/gen/go/user/v1/           generated Go and gRPC code
 ```
-`cmd/server` and `services/user/cmd/user` parse configuration and call
-`user.Run(ctx, cfg)`. The service app.go explicitly registers handlers with the
+`cmd/server` parses configuration and calls root `app.go`'s `Run(ctx, cfg)`,
+which reuses `user.Run`. The standalone `services/user/cmd/user` entry calls
+`user.Run` directly. The service app.go explicitly registers handlers with the
 shared transport constructors. Both expose HTTP
 and gRPC; there is no separate HTTP-only or gRPC-only server implementation.
 HTTP and RPC adapters call the same application query. Domain/application code
@@ -36,6 +38,27 @@ The repository was built using actual CLI `new`, `add context`, `add service`
 and `add api` commands. See [CLI-GENERATION.md](CLI-GENERATION.md) for the exact
 recipe and the application-owned extensions. Generated output is committed;
 ordinary builds do not invoke the CLI or require Buf.
+
+Configuration is loaded by contrib Viper through infrastructure/config.Load:
+defaults < config.yaml < environment < explicit flags. The default file is optional;
+--config selects a required file. APP_ADDRESS, APP_LOG_LEVEL and APP_TOKEN override
+file settings; APP_TOKEN takes precedence over API_TOKEN. The servex example also
+supports APP_GRPC_ADDRESS. --log-level selects the Zap level (default info).
+Composition roots create contrib Zap console text and optional JSON file logging, inject the core Logger into
+the application and transport boundaries, and flush after shutdown.
+
+Console records render modules and fields as [Module] message [key:value],
+with [操作:…], [耗时:…], [状态:…] and [错误:…] summaries. Newlines and tabs
+in messages/fields are escaped so one event occupies one physical line.
+An explicit component selects the module; otherwise it uses the caller package.
+Console records use local timestamps in YYYY-MM-DD HH:mm:ss format, uppercase levels,
+short caller locations and readable durations. File records use one JSON object
+per line, the same second-precision local timestamps and numeric durations in seconds. Business fields
+remain separate in both outputs. Set log_file in config.yaml, APP_LOG_FILE or
+--log-file to enable JSON file output; an explicit empty --log-file disables it.
+The default is console only. Enabled files rotate at 100 MiB, retain at most five
+backups for up to seven days, and compress backups with lumberjack v2.2.1.
+Give each service process its own file path; close the logger after its users stop.
 
 ## Run
 

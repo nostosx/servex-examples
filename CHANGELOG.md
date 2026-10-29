@@ -5,6 +5,17 @@ establish a stable library API.
 
 ## Unreleased
 
+- Use readable console text and separate JSON file encoding with timestamps,
+  uppercase levels and caller locations. Preserve structured fields, support
+  log_file/APP_LOG_FILE/--log-file and rotate optional files with lumberjack.
+
+- Use contrib Viper for defaults/file/env/flag configuration and contrib Zap for
+  readable console logs and optional JSON files. Inject the core Logger and flush after shutdown; retain
+  API_TOKEN while supporting APP_TOKEN and configurable log levels.
+
+- Add the monolith Run entry in root app.go. cmd/server delegates to it, while
+  the standalone entry calls user.Run. Both reuse the service assembly.
+
 - Add the unreleased servex-contrib/transport/client module required by the
   matching HTTP/gRPC backends. Refresh its actual version and checksum during
   the coordinated release.

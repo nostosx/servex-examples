@@ -32,8 +32,9 @@ the application and can be adapted; it is not fetched again on startup.
 - services/user/internal/port/http retains the typed httpx route and original
   JSON/error behavior. Proto declares gRPC only; no unused HTTP gateway binding
   or second implementation of the query is generated.
-- services/user/app.go registers HTTP and gRPC explicitly. cmd/server and
-  services/user/cmd/user share the same service.Run entry and generated server constructors.
+- Root app.go owns the monolith Run entry and selects user.Run for this
+  single-service host. services/user/app.go registers HTTP and gRPC explicitly;
+  the standalone entry calls user.Run directly. Both share one service assembly.
 - Both clients remain in cmd/. The HTTP server and gRPC server commands are
   replaced by the combined host and standalone service. Defaults are now
   HTTP 8080 / gRPC 9090, and the gRPC client requires API_TOKEN.
@@ -57,3 +58,14 @@ No generation shell/Python script, smoke job, extra module or go.work is needed.
 CI checks the actual checked-in application on Linux/macOS/Windows and checks
 contract drift separately. Tests use temporary loopback listeners and local
 fixtures; automated checks do not require paid APIs or shared services.
+
+Current CLI templates keep process entries limited to configuration, signal context
+and Run. Monolith assembly lives in root app.go; standalone assembly lives in
+services/<name>/app.go. The CLI no longer generates AGENTS.md, CONTRIBUTING.md,
+README.md, README.zh-CN.md, CHANGELOG.md, SECURITY.md or LICENSE. This example
+repository maintains its own documentation and license.
+
+The current scaffold defaults to contrib Viper and contrib Zap. config.Load
+merges defaults, config.yaml, environment and explicit flags; app.go constructs,
+injects and flushes the Logger. The example uses the same loading/logging files,
+with no hand-written configuration engine or global logging backend.
