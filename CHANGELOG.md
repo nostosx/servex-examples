@@ -5,6 +5,14 @@ establish a stable library API.
 
 ## Unreleased
 
+## v1.4.0 - 2026-10-29
+
+- **Breaking:** Move monolith configuration to config/config.toml and standalone service
+  configuration to services/user/config/config.toml. Use independent TOML
+  files with an explicit default path in config.Load; preserve defaults/file/env/flag
+  precedence and --config overrides. Convert precedence fixtures to TOML and
+  verify process isolation and both checked-in configuration files.
+
 ## v1.3.0 - 2026-10-29
 
 - Adopt published servex v1.4.0 and independent contrib HTTP, configuration

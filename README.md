@@ -8,13 +8,15 @@ English | [简体中文](README.zh-CN.md)
 A single Go application generated with nostosx-cli, then extended with a user
 query demonstrated over typed servex HTTP and generated gRPC. The module is
 `github.com/nostosx/servex-examples`; use Go 1.27.3 and Task 3.53.1.
-Snapshot v1.3.0 uses published servex v1.4.0 and grpcx v1.3.0, without sibling
+Snapshot v1.4.0 uses published servex v1.4.0 and grpcx v1.3.0, without sibling
 checkouts, local replacements or a go.work file.
 
 ## Layout and generation
 
 ```text
 app.go                       monolith Run; reuses the single service assembly
+config/config.toml           monolith process settings
+services/user/config/config.toml  standalone service settings
 cmd/                         thin command entries; cmd/server calls application.Run
 domain/user/                 domain declarations and the user value
 application/                 user/query/GetUser shared by both adapters
@@ -37,10 +39,16 @@ recipe and the application-owned extensions. Generated output is committed;
 ordinary builds do not invoke the CLI or require Buf.
 
 Configuration is loaded by contrib Viper through infrastructure/config.Load:
-defaults < config.yaml < environment < explicit flags. The default file is optional;
+defaults < TOML file < environment < explicit flags. The default file is optional;
 --config selects a required file. APP_ADDRESS, APP_LOG_LEVEL and APP_TOKEN override
 file settings; APP_TOKEN takes precedence over API_TOKEN. The servex example also
 supports APP_GRPC_ADDRESS. --log-level selects the Zap level (default info).
+Monoliths load `config/config.toml`; the standalone service loads
+`services/user/config/config.toml`. Run from the repository root because
+paths are relative to the working directory. These files are independent; neither
+entry merges the other process's configuration. Use --config to select a deployment path.
+Both entries keep the same default ports; configure distinct addresses when running them together.
+
 Composition roots create contrib Zap console text and optional JSON file logging, inject the core Logger into
 the application and transport boundaries, and flush after shutdown.
 
@@ -51,7 +59,7 @@ An explicit component selects the module; otherwise it uses the caller package.
 Console records use local timestamps in YYYY-MM-DD HH:mm:ss format, uppercase levels,
 short caller locations and readable durations. File records use one JSON object
 per line, the same second-precision local timestamps and numeric durations in seconds. Business fields
-remain separate in both outputs. Set log_file in config.yaml, APP_LOG_FILE or
+remain separate in both outputs. Set log_file in the process TOML file, APP_LOG_FILE or
 --log-file to enable JSON file output; an explicit empty --log-file disables it.
 The default is console only. Enabled files rotate at 100 MiB, retain at most five
 backups for up to seven days, and compress backups with lumberjack v2.2.1.
@@ -120,7 +128,7 @@ This repository also exposes `task api ACTION=generate|lint|check|breaking`;
 `check` includes normal and integration builds and shuffled race tests with local
 HTTP/gRPC fixtures. It exercises both user adapters, gRPC authentication and shutdown.
 There are no smoke jobs, Python scripts or external-service requirements.
-Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.3.0; use `NOSTOSX`
+Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.4.0; use `NOSTOSX`
 to select a CLI binary built from a checkout. Run `task api ACTION=generate`, review the
 generated diff, then `task api` after editing Proto sources.
 

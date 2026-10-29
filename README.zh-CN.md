@@ -35,18 +35,24 @@ api/gen/go/user/v1/          生成的 Go/gRPC 代码
 生成结果随源码保存，普通构建不执行 CLI，也不需要 Buf。
 
 配置由 infrastructure/config.Load 使用 contrib Viper 读取，优先级为：
-默认值 < config.yaml < 环境变量 < 显式参数。默认配置文件可缺省；
+默认值 < TOML 配置文件 < 环境变量 < 显式参数。默认配置文件可缺省；
 --config 指定的文件必须存在。APP_ADDRESS、APP_LOG_LEVEL、APP_TOKEN 覆盖文件配置，
 APP_TOKEN 优先于原有的 API_TOKEN；servex 示例还支持 APP_GRPC_ADDRESS。
 --log-level 选择 Zap 日志级别，默认 info。装配入口创建 contrib Zap 控制台文本和可选 JSON 文件 Logger，
 通过核心 Logger 接口注入应用和传输边界，并在关闭后 flush。
+
+单体入口默认读取 `config/config.toml`，独立服务入口默认读取
+`services/user/config/config.toml`。路径相对于启动工作目录，请从仓库根目录运行。
+每个进程只读取自己的文件，不自动合并另一个入口的配置；部署时可用
+`--config "/etc/user/config.toml"` 指定挂载路径。
+两种入口保留相同的默认监听端口；同时运行时，需分别修改配置或使用地址参数。
 
 控制台以 [模块] 消息 [字段:值] 展示事件，常用字段显示为 [操作:…]、
 [耗时:…]、[状态:…]、[错误:…]。消息及字段中的换行、制表符转义为文本，
 每个事件只占一行；模块优先取 component，缺省使用调用者包名。
 控制台使用本地时间（格式为 2026-10-29 17:13:50）、大写级别、简短调用位置和易读耗时；
 文件每行写一个 JSON 对象，使用相同的秒级本地时间及以秒为单位的数值耗时。
-两种输出都保留独立业务字段。通过 config.yaml 的 log_file、APP_LOG_FILE
+两种输出都保留独立业务字段。通过进程 TOML 配置的 log_file、APP_LOG_FILE
 或 --log-file 开启文件输出，显式传入空的 --log-file 可关闭文件输出。
 默认只输出控制台；启用文件后，通过 lumberjack v2.2.1 按 100 MiB 轮转，
 最多保留五个备份、七天并压缩。每个服务进程使用独立文件路径，所有使用者停止后关闭 Logger。
@@ -112,7 +118,7 @@ task api
 
 `check` 包含默认及 integration 构建、随机顺序 race 测试，通过本地 HTTP/gRPC fixture
 检查查询、认证和退出。没有 smoke job、Python 脚本或外部服务依赖。
-契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.3.0；可通过 `NOSTOSX` 指向
+契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.4.0；可通过 `NOSTOSX` 指向
 从源码构建的 CLI。修改 Proto 后运行 `task api ACTION=generate`、审查生成差异并运行 `task api`。
 
 v1.1.0 标签仍标识历史源码快照，当前开发版本使用上述结构。

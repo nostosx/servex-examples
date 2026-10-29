@@ -70,7 +70,7 @@ see [SECURITY.md](SECURITY.md). Contributions use the [MIT license](LICENSE).
 
 Use CLI-GENERATION.md for the scaffold recipe. Install Buf 1.72.0 before contract
 work. Run task api ACTION=generate, review the generated diff and run task api. Both
-actions accept NOSTOSX as an absolute executable override. Keep transport/generated
+actions use published CLI v1.4.0 by default and accept NOSTOSX as an absolute executable override. Keep transport/generated
 imports out of domain and application; assemble dependencies through app.go.
 
 Use `task api ACTION=lint` for lint alone; `task api` defaults to `ACTION=check`

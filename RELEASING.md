@@ -7,7 +7,7 @@ automatic release workflow.
 
 ## Published dependencies
 
-The v1.3.0 snapshot uses these released modules, with no local replacements:
+The v1.4.0 snapshot uses these released modules, with no local replacements:
 
 | Module | Version |
 |---|---|
@@ -28,6 +28,10 @@ checkouts or a workspace file as release acceptance.
 1. Start from a clean checkout on `main`. Review both READMEs, the selected
    versions and the dated entry in [CHANGELOG.md](CHANGELOG.md).
 2. Run `task check`, `task lint`, `task vulncheck` and `task api` with Go 1.27.3.
+   Verify the default contract command with NOSTOSX and NOSTOSX_VERSION unset,
+   Buf 1.72.0 and an empty GOMODCACHE in the standalone copy. It must resolve the
+   pinned public CLI without a local executable. Check its version, module origin
+   and sumdb verification; a source-built override is not release acceptance.
    Confirm every hosted CI job passes at the exact commit to be tagged.
 3. Copy or clone the project into a temporary directory with no sibling
    repositories. With `GOWORK=off`, download dependencies, run `go mod verify`
@@ -35,6 +39,14 @@ checkouts or a workspace file as release acceptance.
 4. Complete the normal and integration tests. Record the source revision,
    exact dependency versions, toolchain, check results and known limitations
    in the release notes. Do not describe unrun live integrations as validated.
+
+A proxy can retain a 404 for a newly published version even while its module and
+source archive are available. During default CLI verification on 2026-10-29,
+the official proxy retained a stale v1.3.0 .info response. The standalone check
+passed from an empty module cache with GOPROXY=https://proxy.golang.org,direct
+and GOSUMDB=sum.golang.org, without CLI or version overrides. Retain the direct
+fallback when using that proxy during propagation; do not use a warm module cache
+alone as evidence that the default command works for a fresh checkout.
 
 Run the combined host or standalone user service and both clients on unused loopback ports with API_TOKEN. Verify
 the documented responses and stop the servers with SIGINT or SIGTERM. These

@@ -25,15 +25,16 @@ type Config struct {
 }
 
 // Load merges defaults, a file, environment and explicit flags through Viper.
-// The default config.yaml is optional; an explicitly selected file must exist.
+// The entry point supplies its process-specific default path, relative to the working directory.
+// A missing default file is optional; an explicitly selected file must exist.
 // Help returns flag.ErrHelp before reading configuration or constructing services.
-func Load(ctx context.Context, name string, args []string, output io.Writer) (Config, error) {
+func Load(ctx context.Context, name, defaultPath string, args []string, output io.Writer) (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080", GRPCAddress: "127.0.0.1:9090", LogLevel: "info"}
 	defaults := values{"address": cfg.Address, "grpc_address": cfg.GRPCAddress, "log_level": cfg.LogLevel}
 	var path string
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(output)
-	flags.StringVar(&path, "config", "config.yaml", "configuration file (default file is optional)")
+	flags.StringVar(&path, "config", defaultPath, "configuration file (default file is optional)")
 	flags.StringVar(&cfg.Address, "addr", cfg.Address, "loopback HTTP listen address")
 	flags.StringVar(&cfg.GRPCAddress, "grpc-addr", cfg.GRPCAddress, "loopback gRPC listen address")
 	flags.StringVar(&cfg.LogLevel, "log-level", cfg.LogLevel, "Zap log level")

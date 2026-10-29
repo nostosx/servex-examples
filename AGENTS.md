@@ -30,6 +30,17 @@ then the relevant Go skills. Read README.md, CONTRIBUTING.md and
   task api with Buf 1.72.0. api ACTION also accepts lint/check/breaking (default check);
   breaking requires API_BASE. Do not add smoke or Python tooling.
 
-- Default process configuration uses contrib config/viper, including config.yaml,
+- Default process configuration uses contrib config/viper, including config/config.toml,
   APP_ overrides and explicit flags. app.go constructs contrib logger/zap console/file
   logging and injects the core Logger; keep globals and concrete backends out of domain/application.
+
+- TOML process files are independent: config/config.toml for cmd/server and
+  services/user/config/config.toml for the standalone service. Entry points pass
+  their default path to config.Load; preserve file/env/flag precedence.
+
+- Default contract acceptance (2026-10-29): task api passed in an independent
+  copy with an empty GOMODCACHE, NOSTOSX/NOSTOSX_VERSION unset, Buf 1.72.0,
+  GOPROXY=https://proxy.golang.org,direct and GOSUMDB=sum.golang.org. Public CLI
+  v1.3.0 resolves to a7e193283bb9fff46fc6d17c946f1d0483b1fd28. A stale proxy
+  .info 404 required the direct fallback; warm-cache or local-CLI checks alone
+  do not establish cold-start availability. See RELEASING.md.

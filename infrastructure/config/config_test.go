@@ -34,12 +34,12 @@ func TestValidateRejectsUnsafeConfiguration(t *testing.T) {
 func TestLoadRejectsArguments(t *testing.T) {
 	for _, arg := range []string{"--bad", "unexpected"} {
 		t.Run(arg, func(t *testing.T) {
-			if _, err := Load(context.Background(), "test", []string{arg}, io.Discard); err == nil {
+			if _, err := Load(context.Background(), "test", "config/config.toml", []string{arg}, io.Discard); err == nil {
 				t.Fatal("invalid argument accepted")
 			}
 		})
 	}
-	if _, err := Load(context.Background(), "test", []string{"--help"}, io.Discard); !errors.Is(err, flag.ErrHelp) {
+	if _, err := Load(context.Background(), "test", "config/config.toml", []string{"--help"}, io.Discard); !errors.Is(err, flag.ErrHelp) {
 		t.Fatal(err)
 	}
 }
@@ -48,7 +48,7 @@ func TestLoadDefaults(t *testing.T) {
 	clearConfigEnv(t)
 	t.Chdir(t.TempDir())
 	t.Setenv("API_TOKEN", strings.Repeat("a", 32))
-	cfg, err := Load(context.Background(), "test", nil, io.Discard)
+	cfg, err := Load(context.Background(), "test", "config/config.toml", nil, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,14 +78,14 @@ func clearConfigEnv(t *testing.T) {
 
 func TestLoadPrecedence(t *testing.T) {
 	clearConfigEnv(t)
-	path := filepath.Join(t.TempDir(), "settings.yaml")
-	content := "address: 127.0.0.1:8101\ngrpc_address: 127.0.0.1:9101\nlog_level: warn\ntoken: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+	path := filepath.Join(t.TempDir(), "settings.toml")
+	content := "address = \"127.0.0.1:8101\"\ngrpc_address = \"127.0.0.1:9101\"\nlog_level = \"warn\"\ntoken = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n"
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	load := func(args ...string) Config {
 		t.Helper()
-		cfg, err := Load(t.Context(), "test", append([]string{"--config", path}, args...), io.Discard)
+		cfg, err := Load(t.Context(), "test", "config/config.toml", append([]string{"--config", path}, args...), io.Discard)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestLoadPrecedence(t *testing.T) {
 		t.Fatal(cfg)
 	}
 	t.Setenv("APP_TOKEN", "")
-	if _, err := Load(t.Context(), "test", []string{"--config", path}, io.Discard); err == nil {
+	if _, err := Load(t.Context(), "test", "config/config.toml", []string{"--config", path}, io.Discard); err == nil {
 		t.Fatal("explicit empty token accepted")
 	}
 }
@@ -126,31 +126,86 @@ func TestLoadRejectsInvalidSources(t *testing.T) {
 	clearConfigEnv(t)
 	t.Setenv("API_TOKEN", strings.Repeat("a", 32))
 	dir := t.TempDir()
-	path := filepath.Join(dir, "broken.yaml")
-	if err := os.WriteFile(path, []byte("log_level: [unterminated"), 0o600); err != nil {
+	path := filepath.Join(dir, "broken.toml")
+	if err := os.WriteFile(path, []byte("log_level = [unterminated"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
 		name string
 		args []string
 	}{
-		{"missing file", []string{"--config", filepath.Join(dir, "missing.yaml")}},
+		{"missing file", []string{"--config", filepath.Join(dir, "missing.toml")}},
 		{"malformed file", []string{"--config", path}},
 		{"empty path", []string{"--config", ""}},
 		{"invalid level", []string{"--log-level", "invalid"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := Load(t.Context(), "test", tc.args, io.Discard); err == nil {
+			if _, err := Load(t.Context(), "test", "config/config.toml", tc.args, io.Discard); err == nil {
 				t.Fatal("invalid configuration accepted")
 			}
 		})
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := Load(ctx, "test", nil, io.Discard); !errors.Is(err, context.Canceled) {
+	if _, err := Load(ctx, "test", "config/config.toml", nil, io.Discard); !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
-	if _, err := Load(t.Context(), "test", []string{"--config", path, "--help"}, io.Discard); !errors.Is(err, flag.ErrHelp) {
+	if _, err := Load(t.Context(), "test", "config/config.toml", []string{"--config", path, "--help"}, io.Discard); !errors.Is(err, flag.ErrHelp) {
 		t.Fatal(err)
+	}
+}
+
+func TestLoadProcessFiles(t *testing.T) {
+	clearConfigEnv(t)
+	t.Chdir(t.TempDir())
+	t.Setenv("API_TOKEN", strings.Repeat("a", 32))
+	paths := []string{"config/config.toml", "services/order/config/config.toml", "services/payment/config/config.toml"}
+	levels := []string{"warn", "debug", "error"}
+	for i, path := range paths {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("log_level = \""+levels[i]+"\"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i, path := range paths {
+		cfg, err := Load(t.Context(), "test", path, nil, io.Discard)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.LogLevel != levels[i] {
+			t.Fatal("process loaded another configuration", cfg)
+		}
+	}
+	cfg, err := Load(t.Context(), "test", paths[1], []string{"--config", paths[2]}, io.Discard)
+	if err != nil || cfg.LogLevel != "error" {
+		t.Fatal(cfg, err)
+	}
+	if err := os.Remove(paths[1]); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err = Load(t.Context(), "test", paths[1], nil, io.Discard)
+	if err != nil || cfg.LogLevel != "info" {
+		t.Fatal("missing service file must not load root settings", cfg, err)
+	}
+}
+
+func TestLoadExampleFiles(t *testing.T) {
+	clearConfigEnv(t)
+	t.Setenv("API_TOKEN", strings.Repeat("a", 32))
+	t.Chdir(filepath.Join("..", ".."))
+	for _, path := range []string{"config/config.toml", "services/user/config/config.toml"} {
+		// Require the checked-in files so a missing example cannot silently use defaults.
+		cfg, err := Load(t.Context(), "test", path, []string{"--config", path}, io.Discard)
+		if err != nil {
+			t.Fatalf("load example %s: %v", path, err)
+		}
+		if cfg.Address != "127.0.0.1:8080" || cfg.LogLevel != "info" || cfg.LogFile != "" {
+			t.Fatal(path, cfg)
+		}
+		if cfg.GRPCAddress != "127.0.0.1:9090" {
+			t.Fatal(path, cfg)
+		}
 	}
 }
