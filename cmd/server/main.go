@@ -4,24 +4,24 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log/slog"
 	"os"
 
 	"github.com/nostosx/servex/app"
 
 	application "github.com/nostosx/servex-examples"
 	"github.com/nostosx/servex-examples/infrastructure/config"
+	"github.com/nostosx/servex-examples/infrastructure/logging"
 )
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("server stopped", "error", err)
+		logging.Report(err)
 		os.Exit(1)
 	}
 }
 
 func run() error {
-	cfg, err := config.Parse("server", os.Args[1:], os.Stderr)
+	cfg, err := config.Load(context.Background(), "server", os.Args[1:], os.Stderr)
 	if errors.Is(err, flag.ErrHelp) {
 		return nil
 	}

@@ -30,7 +30,7 @@ func TestUserHTTPAndRPC(t *testing.T) {
 	defer cancel()
 	cfg := config.Config{Address: "127.0.0.1:0", GRPCAddress: "127.0.0.1:0", Token: strings.Repeat("a", 32)}
 	var app *lifecycle.App
-	servers, err := server.New(ctx, cfg, health.CheckerFunc(func(ctx context.Context) error { return app.Check(ctx) }))
+	servers, err := server.New(ctx, cfg, health.CheckerFunc(func(ctx context.Context) error { return app.Check(ctx) }), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

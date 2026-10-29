@@ -1,47 +1,114 @@
-// Package config loads and validates process settings.
+// Package config loads process settings with the contrib Viper implementation.
 package config
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"io"
 	"net"
 	"os"
 	"strings"
+
+	cfgviper "github.com/nostosx/servex-contrib/config/viper"
+	"github.com/nostosx/servex-contrib/config/viper/file"
+	sxconfig "github.com/nostosx/servex/config"
 )
 
 // Config contains operator-controlled settings for enabled transports.
 type Config struct {
-	Address     string
-	GRPCAddress string
-	Token       string
+	Address     string `json:"address"`
+	GRPCAddress string `json:"grpc_address"`
+	Token       string `json:"token"`
+	LogLevel    string `json:"log_level"`
+	LogFile     string `json:"log_file"`
 }
 
-// Parse reads flags and environment without creating services. Help returns
-// flag.ErrHelp so command entries can exit before starting the application.
-func Parse(name string, args []string, output io.Writer) (Config, error) {
-	var cfg Config
+// Load merges defaults, a file, environment and explicit flags through Viper.
+// The default config.yaml is optional; an explicitly selected file must exist.
+// Help returns flag.ErrHelp before reading configuration or constructing services.
+func Load(ctx context.Context, name string, args []string, output io.Writer) (Config, error) {
+	cfg := Config{Address: "127.0.0.1:8080", GRPCAddress: "127.0.0.1:9090", LogLevel: "info"}
+	defaults := values{"address": cfg.Address, "grpc_address": cfg.GRPCAddress, "log_level": cfg.LogLevel}
+	var path string
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(output)
-	flags.StringVar(&cfg.Address, "addr", "127.0.0.1:8080", "loopback HTTP listen address")
-	flags.StringVar(&cfg.GRPCAddress, "grpc-addr", "127.0.0.1:9090", "loopback gRPC listen address")
+	flags.StringVar(&path, "config", "config.yaml", "configuration file (default file is optional)")
+	flags.StringVar(&cfg.Address, "addr", cfg.Address, "loopback HTTP listen address")
+	flags.StringVar(&cfg.GRPCAddress, "grpc-addr", cfg.GRPCAddress, "loopback gRPC listen address")
+	flags.StringVar(&cfg.LogLevel, "log-level", cfg.LogLevel, "Zap log level")
+	flags.StringVar(&cfg.LogFile, "log-file", "", "optional rotating JSON log file")
 	if err := flags.Parse(args); err != nil {
 		return Config{}, err
 	}
 	if flags.NArg() != 0 {
 		return Config{}, errors.New("unexpected positional arguments")
 	}
-	cfg.Token = os.Getenv("API_TOKEN")
-	return cfg, nil
+	explicitFile := false
+	overrides := values{}
+	flags.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "config":
+			explicitFile = true
+		case "addr":
+			overrides["address"] = cfg.Address
+		case "grpc-addr":
+			overrides["grpc_address"] = cfg.GRPCAddress
+		case "log-level":
+			overrides["log_level"] = cfg.LogLevel
+		case "log-file":
+			overrides["log_file"] = cfg.LogFile
+		}
+	})
+	if path == "" {
+		return Config{}, errors.New("configuration file path must not be empty")
+	}
+	sources := []sxconfig.Source{defaults}
+	if explicitFile {
+		sources = append(sources, file.New(path))
+	} else if _, err := os.Stat(path); err == nil {
+		sources = append(sources, file.New(path))
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return Config{}, err
+	}
+	if token, ok := os.LookupEnv("API_TOKEN"); ok {
+		sources = append(sources, values{"token": token})
+	}
+	sources = append(sources, cfgviper.Env("APP_"), overrides)
+	loaded, err := cfgviper.New(ctx, sources, cfgviper.WithValidator(func(_ context.Context, candidate sxconfig.Reader) error {
+		var candidateConfig Config
+		if err := candidate.Unmarshal("", &candidateConfig); err != nil {
+			return err
+		}
+		return candidateConfig.Validate()
+	}))
+	if err != nil {
+		return Config{}, err
+	}
+	var result Config
+	if err := loaded.Unmarshal("", &result); err != nil {
+		return Config{}, err
+	}
+	return result, nil
 }
+
+// values supplies application defaults and explicit flags to the configuration engine.
+type values map[string]any
+
+func (v values) Load(ctx context.Context) (map[string]any, error) { return v, ctx.Err() }
 
 // Validate checks settings before creating listeners or application resources.
 func (c Config) Validate() error {
 	if len(c.Token) < 32 || strings.ContainsFunc(c.Token, func(r rune) bool { return r < '!' || r > '~' }) {
-		return errors.New("API_TOKEN must contain at least 32 printable ASCII characters without whitespace")
+		return errors.New("token must contain at least 32 printable ASCII characters without whitespace")
 	}
 	if !loopbackAddress(c.Address) || !loopbackAddress(c.GRPCAddress) {
 		return errors.New("plaintext listeners must use literal loopback IPs")
+	}
+	switch strings.ToLower(c.LogLevel) {
+	case "", "debug", "info", "warn", "error", "dpanic", "panic", "fatal":
+	default:
+		return errors.New("invalid log_level")
 	}
 	return nil
 }
