@@ -9,8 +9,8 @@ import (
 
 	"github.com/nostosx/servex/app"
 
+	application "github.com/nostosx/servex-examples"
 	"github.com/nostosx/servex-examples/infrastructure/config"
-	service "github.com/nostosx/servex-examples/services/user"
 )
 
 func main() {
@@ -30,5 +30,5 @@ func run() error {
 	}
 	ctx, stop := app.SignalContext(context.Background())
 	defer stop()
-	return service.Run(ctx, cfg)
+	return application.Run(ctx, cfg)
 }
