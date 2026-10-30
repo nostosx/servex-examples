@@ -1,12 +1,12 @@
 # CLI generation and application extensions
 
-This repository is one Go module, generated from the nostosx-cli v1.4.0
+This repository is one Go module, generated from the nostosx-cli v1.5.0
 with the monolith layout. The CLI implementation, templates and tests live
 in their own repository; normal builds never read sibling source.
 
 ## Create the foundation
 
-Install CLI v1.4.0 outside this application module. Set NOSTOSX to the
+Install CLI v1.5.0 outside this application module. Set NOSTOSX to the
 nostosx executable's absolute path. Use a new
 output directory: generation and additions reject overwriting existing files.
 The commands below were used to establish this repository's foundation:
@@ -15,8 +15,8 @@ The commands below were used to establish this repository's foundation:
 "$NOSTOSX" new servex-examples --module github.com/nostosx/servex-examples --layout monolith --transport http,grpc --output ./new-example
 "$NOSTOSX" add context user --dir ./new-example
 "$NOSTOSX" add service user --dir ./new-example
-"$NOSTOSX" add api get-user --transport http --service user --method GET --path '/v1/users/{id}' --dir ./new-example
-"$NOSTOSX" add api get-user --transport grpc --service user --dir ./new-example
+"$NOSTOSX" add api get-user --transport http --service user --context user --method GET --path '/v1/users/{id}' --dir ./new-example
+"$NOSTOSX" add api get-user --transport grpc --service user --context user --kind query --dir ./new-example
 ```
 
 These establish configuration/server/RPC infrastructure, a domain/application context,
@@ -52,7 +52,7 @@ task check lint vulncheck
 task api NOSTOSX="$NOSTOSX"
 ```
 
-The Taskfile defaults contract operations to CLI v1.4.0 through go run, without
+The Taskfile defaults contract operations to CLI v1.5.0 through go run, without
 adding it to go.mod. Use the NOSTOSX override when validating unreleased CLI code.
 No generation shell/Python script, smoke job, extra module or go.work is needed.
 CI checks the actual checked-in application on Linux/macOS/Windows and checks
@@ -70,8 +70,20 @@ merges defaults, a process TOML file, environment and explicit flags; app.go con
 injects and flushes the Logger. The example uses the same loading/logging files,
 with no hand-written configuration engine or global logging backend.
 
-The process configuration layout matches CLI v1.4.0: config/config.toml for
+The process configuration layout matches CLI v1.5.0: config/config.toml for
 the monolith and services/user/config/config.toml for the standalone entry.
 Each config.Load call explicitly supplies its default path between name and args.
 Paths are relative to the working directory; files are not merged across processes.
 Existing YAML-based applications need an explicit migration.
+
+The application injects one shared `cqrs.Query` into HTTP and gRPC GetUser adapters. The service Query assembles `user.get_user` once and selects CQRS logging. Notes CRUD receives typed commands/queries with `notes.create_note`, `notes.list_notes`, `notes.update_note` and `notes.delete_note` metadata. Authorization stays at the inbound boundary.
+
+CLI v1.5.0 separates contexts from services. `add api` requires `--context`; pure gRPC also requires `--kind query` or `--kind command`.
+
+The application layout separates business contexts from deployable services. Service-private `internal/application/command.go` and `query.go` declare `Command` and `Query`, which assemble typed CQRS chains and metadata. `app.go` constructs dependencies through `CommandDeps`/`QueryDeps` and injects them into protocol adapters.
+
+With CLI v1.5.0, add APIs with explicit ownership, for example:
+
+```sh
+"$NOSTOSX" add api get-user --service user --context user --method GET --path '/v1/users/{id}'
+```

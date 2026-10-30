@@ -1,17 +1,19 @@
 # servex-examples
 
-This development snapshot combines published servex v1.4.0 with unreleased
-contrib composition APIs. Validate and run it against a matching servex-contrib
-source checkout through the temporary source helper below.
+The v1.5.0 snapshot composes published servex and independently versioned contrib
+modules into a runnable HTTP/gRPC application with typed CQRS, login and notes.
 
 English | [简体中文](README.zh-CN.md)
 
 A single Go application generated with nostosx-cli, then extended with a user
 query demonstrated over typed servex HTTP and generated gRPC. The module is
 `github.com/nostosx/servex-examples`; use Go 1.27.3 and Task 3.53.1.
-The historical v1.4.0 tag uses only published dependencies. The current
-development tree requires matching contrib source until those APIs are released;
-canonical module files contain no local replacements or go.work file.
+All dependencies resolve through the public Go proxy; no sibling checkout,
+local replacement or go.work file is required.
+
+The application injects one shared `cqrs.Query` into HTTP and gRPC GetUser adapters. The service application aggregate assembles `user.get_user` once and selects CQRS logging. Notes CRUD receives typed commands/queries with `notes.create_note`, `notes.list_notes`, `notes.update_note` and `notes.delete_note` metadata. Authorization stays at the inbound boundary.
+
+The application layout separates business contexts from deployable services. Service-private `internal/application/command.go` and `query.go` declare `Command` and `Query`, which assemble typed CQRS chains and metadata. `app.go` constructs dependencies through `CommandDeps`/`QueryDeps` and injects them into protocol adapters.
 
 ## Layout and generation
 
@@ -69,20 +71,15 @@ Give each service process its own file path; close the logger after its users st
 
 ## Run
 
-The helper reads `SERVEX_CONTRIB_SOURCE` (default `../servex-contrib`) and
-uses a temporary modfile to select that checkout. It never writes local
-replacements into go.mod/go.sum. Keep the checkout versions aligned.
+Run directly with the published dependency graph.
 
 
 ```sh
 git clone https://github.com/nostosx/servex-examples.git
 cd servex-examples
 export GOWORK=off
-# Use the matching contrib development revision from the same change set.
-git clone https://github.com/nostosx/servex-contrib.git ../servex-contrib
-export SERVEX_CONTRIB_SOURCE="$(cd ../servex-contrib && pwd)"
 export API_TOKEN="$(openssl rand -hex 32)"
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/server
 ```
 `API_TOKEN` must contain at least 32 printable ASCII characters without whitespace.
 The default listeners are `127.0.0.1:8080` and `127.0.0.1:9090`.
@@ -94,8 +91,8 @@ In a second terminal, set the same token and run:
 ```sh
 export GOWORK=off
 # Set API_TOKEN to the same value as the server.
-bash .github/scripts/check-source.sh -- go run ./cmd/http-client
-bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client
+go run ./cmd/http-client
+go run ./cmd/grpc-client
 curl http://127.0.0.1:8080/v1/users/7
 curl http://127.0.0.1:8080/readyz
 ```
@@ -108,9 +105,9 @@ RPC returns the same data and rejects unauthenticated requests.
 To run the independently deployable service instead of the combined host:
 
 ```sh
-bash .github/scripts/check-source.sh -- go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
-bash .github/scripts/check-source.sh -- go run ./cmd/http-client -target http://127.0.0.1:8100
-bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
+go run ./cmd/http-client -target http://127.0.0.1:8100
+go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
 ```
 
 Stop with Ctrl+C. Readiness follows the application lifecycle. HTTP retains the
@@ -121,9 +118,9 @@ Connections are plaintext; add TLS and application authorization before external
 ## Checks and contracts
 
 ```sh
-bash .github/scripts/check-source.sh check
-bash .github/scripts/check-source.sh lint
-bash .github/scripts/check-source.sh vulncheck
+task check
+task lint
+task vulncheck
 task api
 ```
 
@@ -138,7 +135,7 @@ This repository also exposes `task api ACTION=generate|lint|check|breaking`;
 HTTP/gRPC fixtures. It exercises both user adapters, gRPC authentication and shutdown.
 Default checks need no external services. The explicitly enabled composition
 integration test requires disposable backends as described below.
-Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.4.0; use `NOSTOSX`
+Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.5.0; use `NOSTOSX`
 to select a CLI binary built from a checkout. Run `task api ACTION=generate`, review the
 generated diff, then `task api` after editing Proto sources.
 
@@ -148,23 +145,22 @@ described here. See [CONTRIBUTING.md](CONTRIBUTING.md), [RELEASING.md](RELEASING
 
 ## Composed application
 
-The unreleased composition is assembled in `services/user/app.go`. It keeps the
+The application composition is assembled in `services/user/app.go`. It keeps the
 original public `/v1/users/{id}` and gRPC bearer token behavior, and adds a small
 notes application behind browser login. Backend addresses are empty by default:
 notes, browser sessions, pending OAuth states and cache stay in bounded local
 memory. Login has no default username, password or trusted identity.
 
-Use the source validation helper described above for these unreleased contrib
-APIs. Generate your own password hash from stdin, then explicitly enable local
+Generate your own password hash from stdin, then explicitly enable local
 HTTP cookies and a demonstration account:
 
 ```sh
 export API_TOKEN="$(openssl rand -hex 32)"
 # Set DEMO_PASSWORD privately in your shell; printf does not add a newline.
 export APP_COMPOSITION__DEMO_USERNAME="demo"
-export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | bash .github/scripts/check-source.sh -- go run ./cmd/password-hash)"
+export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | go run ./cmd/password-hash)"
 export APP_COMPOSITION__INSECURE_COOKIES=true
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/server
 ```
 
 Keep `insecure_cookies=false` when a TLS terminator serves the application to a
@@ -206,8 +202,8 @@ migration command before starting a configured PostgreSQL instance:
 
 ```sh
 export APP_COMPOSITION__POSTGRES_DSN="postgres://..."
-bash .github/scripts/check-source.sh -- go run ./cmd/migrate
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/migrate
+go run ./cmd/server
 ```
 
 Run one migration process per deployment. The migration command creates the
@@ -269,6 +265,6 @@ PostgreSQL, Redis, S3 and etcd. Set `SERVEX_EXAMPLES_IT_POSTGRES_DSN`,
 `SERVEX_EXAMPLES_IT_REDIS_ADDR`, `SERVEX_EXAMPLES_IT_S3_ENDPOINT`,
 `SERVEX_EXAMPLES_IT_S3_BUCKET`, `SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`,
 `SERVEX_EXAMPLES_IT_S3_SECRET_KEY` and `SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS` (comma
-separated), then run the source helper with `test INTEGRATION=true`. Supply a
+separated), then run `task test INTEGRATION=true`. Supply a
 fresh bucket name: the test creates that bucket, deletes its own objects and
 removes it. The test never drops a database or table.

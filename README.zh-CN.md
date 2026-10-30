@@ -1,15 +1,18 @@
 # servex-examples
 
-当前开发快照使用公开发布的 servex v1.4.0 和尚未发布的 contrib 组合 API，
-通过下方的临时源码入口，配合匹配版本的 servex-contrib checkout 验证与运行。
+v1.5.0 快照组合已发布的 servex 与独立版本的 contrib 模块，提供可运行的
+HTTP/gRPC、类型化 CQRS、浏览器登录和笔记应用。
 
 [English](README.md) | 简体中文
 
 使用 nostosx-cli 实际生成的单模块 Go 工程，再补入用户查询示例，展示 servex 类型化
 HTTP 路由与生成的 gRPC 服务。模块为 `github.com/nostosx/servex-examples`，
-使用 Go 1.27.3、Task 3.53.1。历史 v1.4.0 标签只依赖已发布模块；
-当前开发代码需要匹配的 contrib 源码，直至新增 API 发布。正式模块文件不包含
-本地 replace，也不提交 go.work。
+使用 Go 1.27.3、Task 3.53.1。依赖通过公开 Go proxy 解析，
+无需相邻仓库、本地 replace 或 go.work。
+
+应用通过注入的 `cqrs.Query` 让 HTTP/gRPC 共享 GetUser 用例及 chain；服务 Query 只装配一次 `user.get_user`，并选择 CQRS 日志中间件。笔记 CRUD 也通过注入的 command/query 调用，使用稳定的 notes 操作名；认证与授权保留在入口。
+
+应用结构采用服务内 `internal/application/command.go`、`query.go` 中的 `Command`、`Query`，统一装配稳定 operation 与类型化 CQRS chain；`app.go` 通过 `CommandDeps`/`QueryDeps` 构造依赖并注入协议适配器。业务 context 与可部署 service 独立，协议端口只做转换。
 
 ## 目录与生成
 
@@ -60,19 +63,15 @@ APP_TOKEN 优先于原有的 API_TOKEN；servex 示例还支持 APP_GRPC_ADDRESS
 
 ## 运行
 
-源码入口读取 `SERVEX_CONTRIB_SOURCE`（默认 `../servex-contrib`），在临时 modfile
-中选择该 checkout，不会把本地 replace 写进 go.mod/go.sum。两个仓库需要版本匹配。
+直接使用公开依赖运行：
 
 
 ```sh
 git clone https://github.com/nostosx/servex-examples.git
 cd servex-examples
 export GOWORK=off
-# 使用同一变更批次中匹配的 contrib 开发版本。
-git clone https://github.com/nostosx/servex-contrib.git ../servex-contrib
-export SERVEX_CONTRIB_SOURCE="$(cd ../servex-contrib && pwd)"
 export API_TOKEN="$(openssl rand -hex 32)"
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/server
 ```
 
 `API_TOKEN` 至少包含 32 个不含空白的可打印 ASCII 字符。默认监听
@@ -84,8 +83,8 @@ gRPC 要求 `authorization: Bearer <API_TOKEN>`。监听地址必须使用字面
 ```sh
 export GOWORK=off
 # 将 API_TOKEN 设置为与服务端相同的值。
-bash .github/scripts/check-source.sh -- go run ./cmd/http-client
-bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client
+go run ./cmd/http-client
+go run ./cmd/grpc-client
 curl http://127.0.0.1:8080/v1/users/7
 curl http://127.0.0.1:8080/readyz
 ```
@@ -98,9 +97,9 @@ InvalidArgument 错误。生成的 `user.v1.UserService/GetUser` RPC 返回相�
 需要独立服务入口时，替代单体宿主运行：
 
 ```sh
-bash .github/scripts/check-source.sh -- go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
-bash .github/scripts/check-source.sh -- go run ./cmd/http-client -target http://127.0.0.1:8100
-bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
+go run ./cmd/http-client -target http://127.0.0.1:8100
+go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
 ```
 
 Ctrl+C 退出，就绪状态跟随应用生命周期。保留 64 KiB 请求体限制、五秒请求头超时、
@@ -110,9 +109,9 @@ Ctrl+C 退出，就绪状态跟随应用生命周期。保留 64 KiB 请求体�
 ## 检查与契约
 
 ```sh
-bash .github/scripts/check-source.sh check
-bash .github/scripts/check-source.sh lint
-bash .github/scripts/check-source.sh vulncheck
+task check
+task lint
+task vulncheck
 task api
 ```
 
@@ -126,7 +125,7 @@ task api
 `check` 包含默认及 integration 构建、随机顺序 race 测试，通过本地 HTTP/gRPC fixture
 检查查询、认证和退出。默认检查不依赖外部服务；显式启用的完整组合集成测试
 需要下文列出的隔离后端。
-契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.4.0；可通过 `NOSTOSX` 指向
+契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.5.0；可通过 `NOSTOSX` 指向
 从源码构建的 CLI。修改 Proto 后运行 `task api ACTION=generate`、审查生成差异并运行 `task api`。
 
 v1.1.0 标签仍标识历史源码快照，当前开发版本使用上述结构。
@@ -135,7 +134,7 @@ v1.1.0 标签仍标识历史源码快照，当前开发版本使用上述结构�
 
 ## 完整应用组合
 
-未发布的组合示例统一装配在 `services/user/app.go`，保留公开的
+完整组合示例统一装配在 `services/user/app.go`，保留公开的
 `/v1/users/{id}` 和原有 gRPC bearer token 行为，并新增浏览器登录后的笔记应用。
 默认所有后端地址为空：笔记、Session、待完成 OAuth state 和缓存使用有容量上限的
 进程内存。没有默认用户名、密码或生产身份。
@@ -147,9 +146,9 @@ PHC hash，再显式启用本地 HTTP Cookie 和演示账号：
 export API_TOKEN="$(openssl rand -hex 32)"
 # 在自己的 shell 中私下设置 DEMO_PASSWORD，printf 不添加换行。
 export APP_COMPOSITION__DEMO_USERNAME="demo"
-export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | bash .github/scripts/check-source.sh -- go run ./cmd/password-hash)"
+export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | go run ./cmd/password-hash)"
 export APP_COMPOSITION__INSECURE_COOKIES=true
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/server
 ```
 
 浏览器通过生产 TLS 入口访问时保持 `insecure_cookies=false`。Session Cookie
@@ -189,8 +188,8 @@ bash .github/scripts/check-source.sh -- go run ./cmd/server
 
 ```sh
 export APP_COMPOSITION__POSTGRES_DSN="postgres://..."
-bash .github/scripts/check-source.sh -- go run ./cmd/migrate
-bash .github/scripts/check-source.sh -- go run ./cmd/server
+go run ./cmd/migrate
+go run ./cmd/server
 ```
 
 每次部署运行一个迁移进程。迁移在已配置的数据库内创建笔记表，不负责创建数据库。
@@ -238,5 +237,5 @@ Redis、S3 和 etcd。设置 `SERVEX_EXAMPLES_IT_POSTGRES_DSN`、
 `SERVEX_EXAMPLES_IT_REDIS_ADDR`、`SERVEX_EXAMPLES_IT_S3_ENDPOINT`、
 `SERVEX_EXAMPLES_IT_S3_BUCKET`、`SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`、
 `SERVEX_EXAMPLES_IT_S3_SECRET_KEY`、`SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS`
-（逗号分隔）后，通过源码入口运行 `test INTEGRATION=true`。
+（逗号分隔）后，运行 `task test INTEGRATION=true`。
 bucket 必须使用全新名称：测试创建 bucket、删除自身对象并移除 bucket，不删除数据库或表。

@@ -3,7 +3,11 @@
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
-## Unreleased
+## v1.5.0 - 2026-10-31
+
+- Name service-private application types Command/Query in command.go/query.go and keep them separate from protocol adapters. Construct individual use cases in app.go, compose CQRS chains in handler aggregates, and inject handler aggregates into protocol boundaries.
+
+- Inject one shared GetUser CQRS query into HTTP/gRPC and typed note commands/queries into workspace routes. Compose stable operations and CQRS logging in service-private Command/Query constructors.
 
 - Compose a complete notes application in services/user/app.go with ordinary
   constructors, a single startup DI resolution, shared profile/Prometheus

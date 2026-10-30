@@ -18,17 +18,13 @@ Libraries keep their own godoc Example tests. Comments are English; keep both
 READMEs aligned with behavior.
 
 Use Go 1.27.3 and Task v3.53.1 with a POSIX shell (Git Bash on Windows).
-`Taskfile.yml` sets `GOWORK=off`. The released example resolves public modules
-without a sibling checkout. This unreleased composition uses matching
-servex-contrib source explicitly: clone it beside this repository, or set
-`SERVEX_CONTRIB_SOURCE` to its absolute path. The helper creates an external
-temporary modfile; canonical go.mod/go.sum contain no local replacements or
-invented peer checksums. Do not commit a go.work file.
+`Taskfile.yml` sets `GOWORK=off`. All dependencies resolve public modules
+without a sibling checkout or source overrides. Do not commit a go.work file.
 
 ```sh
-bash .github/scripts/check-source.sh check
-bash .github/scripts/check-source.sh lint
-bash .github/scripts/check-source.sh vulncheck
+task check
+task lint
+task vulncheck
 task api
 ```
 
@@ -41,7 +37,7 @@ Bare `task` runs `check`. Run `task test RACE=true` for race detection or
 `task test RACE=true COVER=true` to also write `coverage.out` and print function
 coverage. Tests always shuffle and disable result caching. `check` reuses the
 same test task with race detection enabled.
-`bash .github/scripts/check-source.sh test INTEGRATION=true` runs the real
+`task test INTEGRATION=true` runs the real
 application composition with race detection and rejects missing configuration,
 absent/skipped/failed or unfinished integration tests. Supply all seven variables:
 `SERVEX_EXAMPLES_IT_POSTGRES_DSN`, `SERVEX_EXAMPLES_IT_REDIS_ADDR`,

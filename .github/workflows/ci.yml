@@ -39,13 +39,7 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
-      - uses: actions/checkout@v7
-        with:
-          repository: nostosx/servex-contrib
-          path: .sources/servex-contrib
-      - run: bash .github/scripts/check-source.sh check
-        env:
-          SERVEX_CONTRIB_SOURCE: ${{ github.workspace }}/.sources/servex-contrib
+      - run: task check
 
   lint:
     runs-on: ubuntu-latest
@@ -65,13 +59,7 @@ jobs:
           install-mode: goinstall
           version: v2.15.0
           install-only: true
-      - uses: actions/checkout@v7
-        with:
-          repository: nostosx/servex-contrib
-          path: .sources/servex-contrib
-      - run: bash .github/scripts/check-source.sh lint
-        env:
-          SERVEX_CONTRIB_SOURCE: ${{ github.workspace }}/.sources/servex-contrib
+      - run: task lint
 
   vulncheck:
     runs-on: ubuntu-latest
@@ -88,13 +76,7 @@ jobs:
           cache: false
       - name: Install scanner outside the module
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
-      - uses: actions/checkout@v7
-        with:
-          repository: nostosx/servex-contrib
-          path: .sources/servex-contrib
-      - run: bash .github/scripts/check-source.sh vulncheck
-        env:
-          SERVEX_CONTRIB_SOURCE: ${{ github.workspace }}/.sources/servex-contrib
+      - run: task vulncheck
 
   contracts:
     runs-on: ubuntu-latest
@@ -126,10 +108,6 @@ jobs:
       SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS: 127.0.0.1:2379
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
-        with:
-          repository: nostosx/servex-contrib
-          path: .sources/servex-contrib
       - uses: go-task/setup-task@v2
         with:
           version: '3.53.1'
@@ -144,9 +122,9 @@ jobs:
             postgres:17.11-alpine3.24
           docker run -d --name servex-example-redis -p 127.0.0.1:6379:6379 redis:8.2.10-alpine
           docker run -d --name servex-example-s3 -p 127.0.0.1:9000:9000 \
-            -e MINIO_ROOT_USER="$SERVEX_EXAMPLES_IT_S3_ACCESS_KEY" \
-            -e MINIO_ROOT_PASSWORD="$SERVEX_EXAMPLES_IT_S3_SECRET_KEY" \
-            minio/minio:RELEASE.2025-01-20T14-49-07Z server /data
+            -e RUSTFS_ACCESS_KEY="$SERVEX_EXAMPLES_IT_S3_ACCESS_KEY" \
+            -e RUSTFS_SECRET_KEY="$SERVEX_EXAMPLES_IT_S3_SECRET_KEY" \
+            rustfs/rustfs:1.0.3 /data
           docker run -d --name servex-example-etcd -p 127.0.0.1:2379:2379 \
             quay.io/coreos/etcd:v3.7.2 /usr/local/bin/etcd --name default \
             --data-dir /tmp/servex-example-etcd --listen-client-urls http://0.0.0.0:2379 \
@@ -155,7 +133,7 @@ jobs:
           for ((attempt = 1; attempt <= 90; attempt++)); do
             if docker exec servex-example-postgres pg_isready -U servex -d servex_it >/dev/null 2>&1 \
               && docker exec servex-example-redis redis-cli ping | grep -qx PONG \
-              && curl -fsS http://127.0.0.1:9000/minio/health/ready >/dev/null 2>&1 \
+              && curl -fsS http://127.0.0.1:9000/health >/dev/null 2>&1 \
               && docker exec servex-example-etcd etcdctl endpoint health >/dev/null 2>&1; then
               ready=1
               break
@@ -164,9 +142,7 @@ jobs:
           done
           test "$ready" = 1
       - name: Verify application composition without skipped tests
-        run: bash .github/scripts/check-source.sh test INTEGRATION=true
-        env:
-          SERVEX_CONTRIB_SOURCE: ${{ github.workspace }}/.sources/servex-contrib
+        run: task test INTEGRATION=true
       - name: Remove owned integration services
         if: always()
         run: |

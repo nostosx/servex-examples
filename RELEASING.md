@@ -7,16 +7,23 @@ automatic release workflow.
 
 ## Published dependencies
 
-The v1.4.0 snapshot uses these released modules, with no local replacements:
+The v1.5.0 snapshot uses these released modules, with no local replacements:
 
 | Module | Version |
 |---|---|
 | `github.com/nostosx/servex` | v1.4.0 |
 | `github.com/nostosx/servex-contrib/transport/grpcx` | v1.3.0 |
 | `github.com/nostosx/kitx` | v1.0.0 |
-| `github.com/nostosx/servex-contrib/config/viper` | v1.0.0 |
+| `github.com/nostosx/servex-contrib/config/viper` | v1.0.1 |
 | `github.com/nostosx/servex-contrib/logger/zap` | v1.0.0 |
 | `github.com/nostosx/servex-contrib/transport/httpx` | v1.0.0 |
+
+The composition also pins auth/login, auth/oauth2, auth/oauth2redis,
+auth/oidc, the password adapter, coordination/etcd, database/goose,
+database/gorm, lifecycle, session, session/redis, storage/s3 and transport/cors
+at v1.0.0; di/do at v1.2.0, jobqueue/asynq at v1.3.0 and middleware at v1.5.0.
+The canonical go.mod/go.sum records the complete dependency graph. Contract
+operations use the published nostosx-cli v1.5.0.
 
 For subsequent snapshots, publish and verify upstream core and contrib versions
 first. Select each version explicitly, tidy go.mod/go.sum and inspect the diff.

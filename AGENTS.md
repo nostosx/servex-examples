@@ -12,10 +12,8 @@ then the relevant Go skills. Read README.md, CONTRIBUTING.md and
 - Compose APIs with explicit parameters. The approved composition registers
   ordinary constructors through di/do once in service app.go. Keep containers
   out of business constructors and request paths; wiring stays in the application.
-- Released snapshots use public dependencies. The unreleased composition uses
-  .github/scripts/check-source.sh and matching contrib source through an external
-  temporary modfile. Keep GOWORK=off and never commit go.work, source replacements
-  or invented peer checksums; verify public installation after publication.
+- Use published dependencies with GOWORK=off and no sibling checkouts. Never commit
+  go.work, source replacements or invented peer checksums; verify public installation.
 - Code comments are English. Preserve package-level Example tests in libraries.
 - `task check` checks formatting, modernizer/tidy diffs, vet, builds and race
   tests with randomized order. `task lint` uses golangci-lint v2.15.0 with
@@ -46,3 +44,5 @@ then the relevant Go skills. Read README.md, CONTRIBUTING.md and
   v1.3.0 resolves to a7e193283bb9fff46fc6d17c946f1d0483b1fd28. A stale proxy
   .info 404 required the direct fallback; warm-cache or local-CLI checks alone
   do not establish cold-start availability. See RELEASING.md.
+
+The application layout separates business contexts from deployable services. Service-private `internal/application/command.go` and `query.go` declare `Command` and `Query`, which assemble typed CQRS chains and metadata. `app.go` constructs dependencies through `CommandDeps`/`QueryDeps` and injects them into protocol adapters.

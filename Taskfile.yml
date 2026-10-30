@@ -6,7 +6,7 @@ vars:
   GOFMT: '{{.GOFMT | default "gofmt"}}'
   GOLANGCI_LINT: '{{.GOLANGCI_LINT | default "golangci-lint"}}'
   GOVULNCHECK: '{{.GOVULNCHECK | default "govulncheck"}}'
-  NOSTOSX_VERSION: '{{.NOSTOSX_VERSION | default "v1.4.0"}}'
+  NOSTOSX_VERSION: '{{.NOSTOSX_VERSION | default "v1.5.0"}}'
 tasks:
   fmt:
     desc: Apply Go formatting

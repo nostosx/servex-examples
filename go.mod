@@ -19,12 +19,12 @@ require (
 	github.com/nostosx/servex-contrib/coordination/etcd v1.0.0
 	github.com/nostosx/servex-contrib/database/goose v1.0.0
 	github.com/nostosx/servex-contrib/database/gorm v1.0.0
-	github.com/nostosx/servex-contrib/di/do v1.1.0
-	github.com/nostosx/servex-contrib/jobqueue/asynq v1.2.0
+	github.com/nostosx/servex-contrib/di/do v1.2.0
+	github.com/nostosx/servex-contrib/jobqueue/asynq v1.3.0
 	github.com/nostosx/servex-contrib/lifecycle v1.0.0
 	github.com/nostosx/servex-contrib/logger/zap v1.0.0
 	github.com/nostosx/servex-contrib/metrics/prometheus v1.2.0
-	github.com/nostosx/servex-contrib/middleware v1.4.0
+	github.com/nostosx/servex-contrib/middleware v1.5.0
 	github.com/nostosx/servex-contrib/session v1.0.0
 	github.com/nostosx/servex-contrib/session/redis v1.0.0
 	github.com/nostosx/servex-contrib/storage/s3 v1.0.0
