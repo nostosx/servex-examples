@@ -77,21 +77,29 @@ tasks:
           for tags in '' integration; do {{.GO | shellQuote}} build -tags "$tags" ./...; done
 
   test:
-    desc: Run shuffled tests (RACE=true and COVER=true are optional)
+    desc: Run shuffled tests (RACE=true, COVER=true or INTEGRATION=true)
     vars:
       RACE: '{{.RACE | default "false"}}'
       COVER: '{{.COVER | default "false"}}'
+      INTEGRATION: '{{.INTEGRATION | default "false"}}'
     cmds:
       - |
           set -eu
           export GOWORK=off GO={{.GO | shellQuote}}
           race={{.RACE | shellQuote}}
           cover={{.COVER | shellQuote}}
+          integration={{.INTEGRATION | shellQuote}}
           case "$race:$cover" in true:true|true:false|false:true|false:false) ;; *) echo 'RACE and COVER must be true or false' >&2; exit 1 ;; esac
+          case "$integration" in true|false) ;; *) echo 'INTEGRATION must be true or false' >&2; exit 1 ;; esac
+          if [ "$integration" = true ]; then
+            bash .github/scripts/integration.sh
+            exit
+          fi
           set -- -tags integration -shuffle=on -count=1
           if [ "$race" = true ]; then set -- "$@" -race; fi
           if [ "$cover" = true ]; then set -- "$@" -coverprofile=coverage.out -covermode=atomic; fi
           {{.GO | shellQuote}} test "$@" ./...
+          GOFLAGS='' {{.GO | shellQuote}} test -shuffle=on -count=1 .github/scripts/integrationcheck/*.go
           if [ "$cover" = true ]; then {{.GO | shellQuote}} tool cover -func=coverage.out; fi
 
   lint:

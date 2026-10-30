@@ -13,3 +13,6 @@
 /coverage.txt
 /.nostosx.lock
 /logs/
+
+# Matching unpublished contrib source used by explicit CI acceptance.
+.sources/

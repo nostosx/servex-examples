@@ -9,11 +9,13 @@ then the relevant Go skills. Read README.md, CONTRIBUTING.md and
   holds app.go, private adapters and standalone service entries.
 - Root app.go selects the monolith composition. Commands parse configuration,
   create a signal context and call Run; keep assembly in root or service app.go.
-- Compose public APIs with explicit parameters. Do not add a DI container or
-  move application wiring back into the libraries.
-- Core, contrib and kitx dependencies use published versions without
-  local replacements. Keep standalone builds reproducible with GOWORK=off;
-  do not commit go.work files or sibling checkout requirements.
+- Compose APIs with explicit parameters. The approved composition registers
+  ordinary constructors through di/do once in service app.go. Keep containers
+  out of business constructors and request paths; wiring stays in the application.
+- Released snapshots use public dependencies. The unreleased composition uses
+  .github/scripts/check-source.sh and matching contrib source through an external
+  temporary modfile. Keep GOWORK=off and never commit go.work, source replacements
+  or invented peer checksums; verify public installation after publication.
 - Code comments are English. Preserve package-level Example tests in libraries.
 - `task check` checks formatting, modernizer/tidy diffs, vet, builds and race
   tests with randomized order. `task lint` uses golangci-lint v2.15.0 with

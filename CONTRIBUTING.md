@@ -17,15 +17,18 @@ private adapters in `services/<name>/internal/port/`.
 Libraries keep their own godoc Example tests. Comments are English; keep both
 READMEs aligned with behavior.
 
-Clone this repository on its own and use Go 1.27.3 and Task v3.53.1 with a POSIX
-shell (Git Bash on Windows). `Taskfile.yml` sets `GOWORK=off`; core, contrib and
-kitx v1.0.0 resolve through the Go module proxy. No sibling checkouts or local
-replacements are needed. Do not commit a go.work file.
+Use Go 1.27.3 and Task v3.53.1 with a POSIX shell (Git Bash on Windows).
+`Taskfile.yml` sets `GOWORK=off`. The released example resolves public modules
+without a sibling checkout. This unreleased composition uses matching
+servex-contrib source explicitly: clone it beside this repository, or set
+`SERVEX_CONTRIB_SOURCE` to its absolute path. The helper creates an external
+temporary modfile; canonical go.mod/go.sum contain no local replacements or
+invented peer checksums. Do not commit a go.work file.
 
 ```sh
-task check
-task lint
-task vulncheck
+bash .github/scripts/check-source.sh check
+bash .github/scripts/check-source.sh lint
+bash .github/scripts/check-source.sh vulncheck
 task api
 ```
 
@@ -38,6 +41,17 @@ Bare `task` runs `check`. Run `task test RACE=true` for race detection or
 `task test RACE=true COVER=true` to also write `coverage.out` and print function
 coverage. Tests always shuffle and disable result caching. `check` reuses the
 same test task with race detection enabled.
+`bash .github/scripts/check-source.sh test INTEGRATION=true` runs the real
+application composition with race detection and rejects missing configuration,
+absent/skipped/failed or unfinished integration tests. Supply all seven variables:
+`SERVEX_EXAMPLES_IT_POSTGRES_DSN`, `SERVEX_EXAMPLES_IT_REDIS_ADDR`,
+`SERVEX_EXAMPLES_IT_S3_ENDPOINT`, `SERVEX_EXAMPLES_IT_S3_BUCKET`,
+`SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`, `SERVEX_EXAMPLES_IT_S3_SECRET_KEY`, and
+`SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS`. Use owned disposable backends and a unique
+bucket; the test runs migrations and creates/deletes its fixture bucket. It
+exercises two Runtime instances sharing SQL/Redis, jobs, S3 and etcd. Ordinary
+unit checks do not require these services. CI provisions isolated containers
+and always removes them. Integration-gate regression fixtures reject false passes.
 The additional `api` task manages this repository's Proto contracts.
 `task fmt`, `task fix` and `task tidy` explicitly modify files.
 CI jobs are independent. All checks use Go 1.27.3, with golangci-lint v2.15.0
@@ -58,8 +72,11 @@ internal call counts. Join goroutines before returning from a test; report
 worker errors to the owning test. Use temporary directories and local listeners.
 
 Automated tests use isolated local HTTP and gRPC fixtures and do not need shared
-services. Keep listeners on loopback for demos. gRPC uses the generated API_TOKEN boundary; HTTP user routes remain public local
-demonstrations. Add HTTP authorization and TLS before external deployment.
+services. Keep listeners on loopback for demos. gRPC retains the API_TOKEN
+boundary; the original HTTP user route remains a public local demonstration.
+Workspace routes require the typed Session principal and CSRF checks. Password
+login uses an explicitly configured demonstration account; replace that account
+lookup with application policy for a deployed service.
 Never commit credentials or personal configuration.
 
 Describe behavior changes and checks in pull requests. Record user-visible
@@ -77,5 +94,6 @@ Use `task api ACTION=lint` for lint alone; `task api` defaults to `ACTION=check`
 and preserves both lint and generated-output checks. `task api ACTION=breaking API_BASE=<revision>` requires an explicit compatibility baseline. Invalid actions
 and a missing breaking baseline fail before invoking the CLI.
 
-The current snapshot uses published core/contrib dependencies. Validate standalone
-consumers without temporary module overrides or sibling replacements.
+Source checks for this snapshot do not establish public module installation.
+After coordinated publication, update the changed module requirements and verify
+standalone consumers without temporary overrides or sibling replacements.
