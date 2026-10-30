@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/nostosx/servex/errorx"
 	"github.com/nostosx/servex/logger"
 )
 
@@ -91,6 +92,14 @@ func Error(ctx context.Context, err error) error {
 	}
 	if errors.Is(err, context.Canceled) {
 		return status.Error(codes.Canceled, "CANCELED")
+	}
+	switch code := errorx.CodeOf(err); code {
+	case errorx.InvalidArgument, errorx.NotFound, errorx.AlreadyExists,
+		errorx.PermissionDenied, errorx.ResourceExhausted, errorx.FailedPrecondition,
+		errorx.Aborted, errorx.OutOfRange, errorx.Unimplemented, errorx.Unavailable,
+		errorx.Unauthenticated:
+		// Canonical codes align with gRPC; expose no backend message or cause.
+		return status.Error(codes.Code(code), code.String())
 	}
 	logError(ctx, "RPC request failed", "error", err)
 	return status.Error(codes.Internal, "INTERNAL")

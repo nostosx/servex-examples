@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/nostosx/servex/errorx"
+
 	"github.com/nostosx/servex-examples/infrastructure/logging"
 	"github.com/nostosx/servex-examples/infrastructure/rpc"
 )
@@ -111,5 +113,15 @@ func TestStreamLogger(t *testing.T) {
 	}
 	if !strings.Contains(output.String(), "RPC request failed") {
 		t.Fatal(output.String())
+	}
+}
+
+func TestApplicationErrorsKeepCanonicalCodes(t *testing.T) {
+	t.Parallel()
+	for _, code := range []errorx.Code{errorx.InvalidArgument, errorx.NotFound, errorx.PermissionDenied, errorx.Unimplemented, errorx.Unavailable} {
+		err := rpc.Error(t.Context(), errorx.New(code, "BUSINESS_REASON", "private backend details"))
+		if status.Code(err) != codes.Code(code) || strings.Contains(err.Error(), "private backend") {
+			t.Fatalf("code=%v err=%v", code, err)
+		}
 	}
 }

@@ -7,13 +7,17 @@ import (
 	"strings"
 	"testing"
 
+	serviceapp "github.com/nostosx/servex-examples/services/user/internal/application"
+
+	"github.com/nostosx/servex-examples/application/user/query"
+
 	"github.com/nostosx/servex-contrib/transport/httpx"
 )
 
 func TestRoutes(t *testing.T) {
 	t.Parallel()
 	srv := httpx.NewServer(httpx.WithMaxBodyBytes(64 << 10))
-	Register(srv)
+	Register(srv, &UserServer{queries: &serviceapp.Query{GetUser: query.NewGetUserHandler()}})
 	for _, tt := range []struct {
 		name, method, path, body string
 		unknownLength            bool

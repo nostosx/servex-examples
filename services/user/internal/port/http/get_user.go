@@ -5,7 +5,6 @@ import (
 	"context"
 
 	"github.com/nostosx/servex-contrib/transport/httpx"
-	"github.com/nostosx/servex-examples/application/user/query"
 )
 
 type GetUserRequest struct {
@@ -16,15 +15,15 @@ type GetUserResponse struct {
 	Name string `json:"name"`
 }
 
-func (*Handler) GetUser(ctx context.Context, r *GetUserRequest) (*GetUserResponse, error) {
-	reply, err := query.GetUser(ctx, r.ID)
+func (h *UserServer) GetUser(ctx context.Context, r *GetUserRequest) (*GetUserResponse, error) {
+	reply, err := h.queries.GetUser.Handle(ctx, mapGetUserRequest(r))
 	if err != nil {
 		return nil, err
 	}
-	return &GetUserResponse{ID: reply.ID, Name: reply.Name}, nil
+	return mapGetUserResponse(reply), nil
 }
 
 // RegisterGetUser mounts the explicitly selected HTTP query.
-func RegisterGetUser(server *httpx.Server, handler *Handler) {
+func RegisterGetUser(server *httpx.Server, handler *UserServer) {
 	httpx.RouteFunc(server, "GET /v1/users/{id}", handler.GetUser)
 }

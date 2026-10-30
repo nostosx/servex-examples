@@ -26,20 +26,24 @@ import (
 
 	"github.com/nostosx/servex-examples/application/identity"
 	"github.com/nostosx/servex-examples/application/notes"
+	notecommand "github.com/nostosx/servex-examples/application/notes/command"
+	notequery "github.com/nostosx/servex-examples/application/notes/query"
 	"github.com/nostosx/servex-examples/infrastructure/config"
+	serviceapp "github.com/nostosx/servex-examples/services/user/internal/application"
 )
 
 // Workspace receives ordinary constructor dependencies, never a DI container.
 type Workspace struct {
-	notes  *notes.Service
-	login  *login.Manager[identity.Principal]
-	hasher *password.Hasher
-	config config.Composition
-	cache  cache.Cache
+	commands *serviceapp.Command
+	queries  *serviceapp.Query
+	login    *login.Manager[identity.Principal]
+	hasher   *password.Hasher
+	config   config.Composition
+	cache    cache.Cache
 }
 
-func NewWorkspace(service *notes.Service, manager *login.Manager[identity.Principal], hasher *password.Hasher, cfg config.Composition, cached cache.Cache) *Workspace {
-	return &Workspace{notes: service, login: manager, hasher: hasher, config: cfg, cache: cached}
+func NewWorkspace(commands *serviceapp.Command, queries *serviceapp.Query, manager *login.Manager[identity.Principal], hasher *password.Hasher, cfg config.Composition, cached cache.Cache) *Workspace {
+	return &Workspace{commands: commands, queries: queries, login: manager, hasher: hasher, config: cfg, cache: cached}
 }
 
 func (h *Workspace) Register(server *httpx.Server, jobs jobqueue.Enqueuer, objects *s3x.Store, coordinator *etcdx.Coordinator) {
@@ -139,7 +143,7 @@ func (h *Workspace) signIn(w http.ResponseWriter, r *http.Request) {
 
 func (h *Workspace) list(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext[identity.Principal](r.Context())
-	items, err := h.notes.List(r.Context(), p.ID)
+	items, err := h.queries.ListNotes.Handle(r.Context(), notequery.ListNotesQuery{Owner: p.ID})
 	if err != nil {
 		failure(w, err)
 		return
@@ -154,7 +158,7 @@ func (h *Workspace) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, _ := auth.FromContext[identity.Principal](r.Context())
-	note, err := h.notes.Create(r.Context(), p.ID, input.Text)
+	note, err := h.commands.CreateNote.Handle(r.Context(), notecommand.CreateNoteCommand{Owner: p.ID, Text: input.Text})
 	if err != nil {
 		failure(w, err)
 		return
@@ -169,7 +173,7 @@ func (h *Workspace) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, _ := auth.FromContext[identity.Principal](r.Context())
-	if err := h.notes.Update(r.Context(), p.ID, r.PathValue("id"), input.Text); err != nil {
+	if _, err := h.commands.UpdateNote.Handle(r.Context(), notecommand.UpdateNoteCommand{Owner: p.ID, ID: r.PathValue("id"), Text: input.Text}); err != nil {
 		failure(w, err)
 		return
 	}
@@ -177,7 +181,7 @@ func (h *Workspace) update(w http.ResponseWriter, r *http.Request) {
 }
 func (h *Workspace) delete(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext[identity.Principal](r.Context())
-	if err := h.notes.Delete(r.Context(), p.ID, r.PathValue("id")); err != nil {
+	if _, err := h.commands.DeleteNote.Handle(r.Context(), notecommand.DeleteNoteCommand{Owner: p.ID, ID: r.PathValue("id")}); err != nil {
 		failure(w, err)
 		return
 	}

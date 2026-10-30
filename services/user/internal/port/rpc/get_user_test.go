@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	serviceapp "github.com/nostosx/servex-examples/services/user/internal/application"
+
+	"github.com/nostosx/servex-examples/application/user/query"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -23,7 +27,7 @@ func TestGetUser(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			reply, err := new(Handler).GetUser(t.Context(), &pb.GetUserRequest{Id: tt.id})
+			reply, err := (&UserServer{queries: &serviceapp.Query{GetUser: query.NewGetUserHandler()}}).GetUser(t.Context(), &pb.GetUserRequest{Id: tt.id})
 			if status.Code(err) != tt.code {
 				t.Fatalf("reply=%v err=%v", reply, err)
 			}
@@ -38,7 +42,7 @@ func TestGetUserCancellation(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	_, err := new(Handler).GetUser(ctx, &pb.GetUserRequest{Id: 7})
+	_, err := (&UserServer{queries: &serviceapp.Query{GetUser: query.NewGetUserHandler()}}).GetUser(ctx, &pb.GetUserRequest{Id: 7})
 	if status.Code(err) != codes.Canceled {
 		t.Fatal(err)
 	}

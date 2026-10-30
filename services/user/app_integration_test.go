@@ -34,7 +34,8 @@ func TestUserHTTPAndRPC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	Register(servers.HTTP, servers.GRPC)
+	commands, queries := testApplicationHandlers()
+	Register(servers.HTTP, servers.GRPC, commands, queries)
 	app = lifecycle.New(lifecycle.WithHooks(servers.HTTP, servers.GRPC))
 	if err := app.Check(ctx); err == nil {
 		t.Fatal("ready before start")

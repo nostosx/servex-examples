@@ -21,19 +21,25 @@ import (
 	"github.com/nostosx/servex-contrib/middleware/profile"
 	corsx "github.com/nostosx/servex-contrib/transport/cors"
 	"github.com/nostosx/servex-contrib/transport/httpx"
+	"github.com/nostosx/servex-examples/application/user/query"
 	"github.com/nostosx/servex/app"
+	"github.com/nostosx/servex/cqrs"
 	"github.com/nostosx/servex/di"
 	"github.com/nostosx/servex/endpoint"
 	"github.com/nostosx/servex/health"
+	"github.com/nostosx/servex/logger"
 	"github.com/nostosx/servex/messaging/jobqueue"
 	"github.com/nostosx/servex/storage/cache"
 
 	pb "github.com/nostosx/servex-examples/api/gen/go/user/v1"
 	"github.com/nostosx/servex-examples/application/identity"
 	"github.com/nostosx/servex-examples/application/notes"
+	notecommand "github.com/nostosx/servex-examples/application/notes/command"
+	notequery "github.com/nostosx/servex-examples/application/notes/query"
 	"github.com/nostosx/servex-examples/infrastructure/config"
 	"github.com/nostosx/servex-examples/infrastructure/logging"
 	"github.com/nostosx/servex-examples/infrastructure/server"
+	serviceapp "github.com/nostosx/servex-examples/services/user/internal/application"
 	httpport "github.com/nostosx/servex-examples/services/user/internal/port/http"
 	rpcport "github.com/nostosx/servex-examples/services/user/internal/port/rpc"
 )
@@ -134,7 +140,7 @@ func Build(ctx context.Context, cfg config.Config) (_ *Runtime, err error) {
 	if err := di.Supply[cache.Cache](container, resources.cache); err != nil {
 		return nil, err
 	}
-	if err := dox.ProvideConstructors(container, notes.NewService, httpport.NewWorkspace); err != nil {
+	if err := dox.ProvideConstructors(container, notes.NewService, newCommand(log), newQuery(log), httpport.NewWorkspace); err != nil {
 		return nil, err
 	}
 	workspace, err := di.Resolve[*httpport.Workspace](container)
@@ -165,7 +171,15 @@ func Build(ctx context.Context, cfg config.Config) (_ *Runtime, err error) {
 		return nil, err
 	}
 	runtime.Servers = servers
-	Register(servers.HTTP, servers.GRPC)
+	commands, err := di.Resolve[*serviceapp.Command](container)
+	if err != nil {
+		return nil, err
+	}
+	queries, err := di.Resolve[*serviceapp.Query](container)
+	if err != nil {
+		return nil, err
+	}
+	Register(servers.HTTP, servers.GRPC, commands, queries)
 	var enqueuer jobqueue.Enqueuer
 	if resources.queue != nil {
 		enqueuer = resources.queue
@@ -201,7 +215,22 @@ func Run(ctx context.Context, cfg config.Config) (err error) {
 }
 
 // Register mounts the original public user route and token-protected gRPC API.
-func Register(http *httpx.Server, registrar grpc.ServiceRegistrar) {
-	httpport.Register(http)
-	pb.RegisterUserServiceServer(registrar, &rpcport.Handler{})
+func Register(http *httpx.Server, registrar grpc.ServiceRegistrar, commands *serviceapp.Command, queries *serviceapp.Query) {
+	httpport.Register(http, httpport.NewUserServer(commands, queries))
+	pb.RegisterUserServiceServer(registrar, rpcport.NewUserServer(commands, queries))
+}
+
+func newCommand(log logger.Logger) func(*notes.Service) *serviceapp.Command {
+	return func(service *notes.Service) *serviceapp.Command {
+		return serviceapp.NewCommand(serviceapp.CommandDeps{
+			CreateNote: notecommand.NewCreateNoteHandler(service), UpdateNote: notecommand.NewUpdateNoteHandler(service), DeleteNote: notecommand.NewDeleteNoteHandler(service), Logger: log,
+		})
+	}
+}
+func newQuery(log logger.Logger, middleware ...cqrs.QueryMiddleware[query.GetUserQuery, query.GetUserResult]) func(*notes.Service) *serviceapp.Query {
+	return func(service *notes.Service) *serviceapp.Query {
+		return serviceapp.NewQuery(serviceapp.QueryDeps{
+			GetUser: query.NewGetUserHandler(), ListNotes: notequery.NewListNotesHandler(service), Logger: log, GetUserMiddleware: middleware,
+		})
+	}
 }

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/nostosx/servex-examples/application/notes"
+	serviceapp "github.com/nostosx/servex-examples/services/user/internal/application"
+
 	"google.golang.org/grpc"
 
 	"github.com/nostosx/servex-contrib/transport/httpx"
@@ -31,8 +34,14 @@ func (r *registry) RegisterService(description *grpc.ServiceDesc, implementation
 }
 func TestRegister(t *testing.T) {
 	var registrar registry
-	Register(httpx.NewServer(), &registrar)
+	commands, queries := testApplicationHandlers()
+	Register(httpx.NewServer(), &registrar, commands, queries)
 	if registrar.description == nil || registrar.description.ServiceName != "user.v1.UserService" || registrar.implementation == nil {
 		t.Fatalf("service not registered: %+v", registrar)
 	}
+}
+
+func testApplicationHandlers() (*serviceapp.Command, *serviceapp.Query) {
+	service := notes.NewService(notes.NewMemoryRepository())
+	return newCommand(nil)(service), newQuery(nil)(service)
 }
