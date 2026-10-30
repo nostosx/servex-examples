@@ -2,3 +2,33 @@ address = "127.0.0.1:8080"
 grpc_address = "127.0.0.1:9090"
 log_level = "info"
 log_file = ""
+
+# Empty backend settings select the bounded, process-local demonstration.
+[composition]
+postgres_dsn = ""
+redis_address = ""
+namespace = "servex-example:"
+# Supply your own username and PHC password hash to enable password login.
+demo_username = ""
+demo_password_hash = ""
+# Explicit local HTTP development opt-in. Keep false behind production TLS.
+insecure_cookies = false
+allowed_origins = []
+# Redis-only periodic enqueueing; deploy one scheduler per schedule set.
+job_schedule = ""
+etcd_endpoints = []
+
+[composition.oidc]
+issuer = ""
+client_id = ""
+client_secret = ""
+auth_url = ""
+token_url = ""
+redirect_url = ""
+
+[composition.s3]
+endpoint = ""
+bucket = ""
+region = "us-east-1"
+access_key = ""
+secret_key = ""

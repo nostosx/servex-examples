@@ -5,6 +5,25 @@ establish a stable library API.
 
 ## Unreleased
 
+- Compose a complete notes application in services/user/app.go with ordinary
+  constructors, a single startup DI resolution, shared profile/Prometheus
+  observability, explicit resource ownership and rollback on failed assembly.
+- Add password and optional OIDC browser login around one typed Principal,
+  Session rotation/revocation, outer CORS/CSRF protection and owner-scoped notes
+  CRUD. Keep the original public user query and gRPC token boundary.
+- Select memory by default; optionally share PostgreSQL GORM/SQL handles, one
+  Redis client across Session/OAuth state/cache/asynq, S3 List-to-Get object
+  flows and an etcd acquisition/release probe. Periodic Redis jobs are opt-in.
+- Add explicit cmd/migrate Goose migrations and cmd/password-hash stdin tooling;
+  startup never migrates and no demonstration identity is enabled by default.
+- Join native consumers and HTTP handlers before closing shared dependencies,
+  including Close before Start and callers whose close deadlines expire.
+- Extend both TOML files and READMEs; add HTTP identity/CRUD/CSRF/cleanup
+  regressions and a two-instance disposable-backend composition integration test.
+- The new contrib APIs are unreleased. Run this development snapshot through
+  .github/scripts/check-source.sh with a matching servex-contrib source checkout;
+  canonical module files retain published version baselines without replacements.
+
 ## v1.4.0 - 2026-10-29
 
 - **Breaking:** Move monolith configuration to config/config.toml and standalone service

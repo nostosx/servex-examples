@@ -17,11 +17,45 @@ import (
 
 // Config contains operator-controlled settings for enabled transports.
 type Config struct {
-	Address     string `json:"address"`
-	GRPCAddress string `json:"grpc_address"`
-	Token       string `json:"token"`
-	LogLevel    string `json:"log_level"`
-	LogFile     string `json:"log_file"`
+	Address     string      `json:"address"`
+	GRPCAddress string      `json:"grpc_address"`
+	Token       string      `json:"token"`
+	LogLevel    string      `json:"log_level"`
+	LogFile     string      `json:"log_file"`
+	Composition Composition `json:"composition"`
+}
+
+// Composition selects one coherent application, with optional external backends.
+// Empty backend addresses keep the default demonstration entirely process-local.
+type Composition struct {
+	PostgresDSN      string   `json:"postgres_dsn"`
+	RedisAddress     string   `json:"redis_address"`
+	Namespace        string   `json:"namespace"`
+	DemoUsername     string   `json:"demo_username"`
+	DemoPasswordHash string   `json:"demo_password_hash"`
+	InsecureCookies  bool     `json:"insecure_cookies"`
+	AllowedOrigins   []string `json:"allowed_origins"`
+	JobSchedule      string   `json:"job_schedule"`
+	OIDC             OIDC     `json:"oidc"`
+	S3               S3       `json:"s3"`
+	EtcdEndpoints    []string `json:"etcd_endpoints"`
+}
+
+type OIDC struct {
+	Issuer       string `json:"issuer"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	AuthURL      string `json:"auth_url"`
+	TokenURL     string `json:"token_url"`
+	RedirectURL  string `json:"redirect_url"`
+}
+
+type S3 struct {
+	Endpoint  string `json:"endpoint"`
+	Bucket    string `json:"bucket"`
+	Region    string `json:"region"`
+	AccessKey string `json:"access_key"`
+	SecretKey string `json:"secret_key"`
 }
 
 // Load merges defaults, a file, environment and explicit flags through Viper.
@@ -31,6 +65,13 @@ type Config struct {
 func Load(ctx context.Context, name, defaultPath string, args []string, output io.Writer) (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080", GRPCAddress: "127.0.0.1:9090", LogLevel: "info"}
 	defaults := values{"address": cfg.Address, "grpc_address": cfg.GRPCAddress, "log_level": cfg.LogLevel}
+	defaults["composition"] = values{
+		"postgres_dsn": "", "redis_address": "", "namespace": "servex-example:",
+		"demo_username": "", "demo_password_hash": "", "insecure_cookies": false,
+		"allowed_origins": []string{}, "job_schedule": "", "etcd_endpoints": []string{},
+		"oidc": values{"issuer": "", "client_id": "", "client_secret": "", "auth_url": "", "token_url": "", "redirect_url": ""},
+		"s3":   values{"endpoint": "", "bucket": "", "region": "us-east-1", "access_key": "", "secret_key": ""},
+	}
 	var path string
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(output)
@@ -110,6 +151,27 @@ func (c Config) Validate() error {
 	case "", "debug", "info", "warn", "error", "dpanic", "panic", "fatal":
 	default:
 		return errors.New("invalid log_level")
+	}
+	if (c.Composition.DemoUsername == "") != (c.Composition.DemoPasswordHash == "") {
+		return errors.New("demo username and password hash must be configured together")
+	}
+	if len(c.Composition.DemoUsername) > 128 || strings.TrimSpace(c.Composition.DemoUsername) != c.Composition.DemoUsername {
+		return errors.New("invalid demo username")
+	}
+	if c.Composition.JobSchedule != "" && c.Composition.RedisAddress == "" {
+		return errors.New("job_schedule requires redis_address")
+	}
+	oidc := c.Composition.OIDC
+	if oidc.Issuer != "" || oidc.ClientID != "" || oidc.ClientSecret != "" || oidc.AuthURL != "" || oidc.TokenURL != "" || oidc.RedirectURL != "" {
+		if oidc.Issuer == "" || oidc.ClientID == "" || oidc.AuthURL == "" || oidc.TokenURL == "" || oidc.RedirectURL == "" {
+			return errors.New("OIDC requires issuer, client ID, authorization/token endpoints and redirect URL")
+		}
+	}
+	if len(c.Composition.Namespace) > 128 || strings.ContainsAny(c.Composition.Namespace, "\r\n\x00") {
+		return errors.New("invalid application namespace")
+	}
+	if c.Composition.S3.Bucket != "" && (c.Composition.S3.AccessKey == "" || c.Composition.S3.SecretKey == "") {
+		return errors.New("S3 credentials must be configured with its bucket")
 	}
 	return nil
 }

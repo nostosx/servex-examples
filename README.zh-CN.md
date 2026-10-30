@@ -1,14 +1,15 @@
 # servex-examples
 
-本快照使用公开发布的 servex v1.4.0，以及独立的 contrib HTTP、配置和日志模块，
-无需同级源码或本地 replace。
+当前开发快照使用公开发布的 servex v1.4.0 和尚未发布的 contrib 组合 API，
+通过下方的临时源码入口，配合匹配版本的 servex-contrib checkout 验证与运行。
 
 [English](README.md) | 简体中文
 
 使用 nostosx-cli 实际生成的单模块 Go 工程，再补入用户查询示例，展示 servex 类型化
 HTTP 路由与生成的 gRPC 服务。模块为 `github.com/nostosx/servex-examples`，
-使用 Go 1.27.3、Task 3.53.1；依赖公开发布的 servex v1.4.0 和 grpcx v1.3.0，
-无需同级仓库、本地 replace 或 go.work。
+使用 Go 1.27.3、Task 3.53.1。历史 v1.4.0 标签只依赖已发布模块；
+当前开发代码需要匹配的 contrib 源码，直至新增 API 发布。正式模块文件不包含
+本地 replace，也不提交 go.work。
 
 ## 目录与生成
 
@@ -16,7 +17,7 @@ HTTP 路由与生成的 gRPC 服务。模块为 `github.com/nostosx/servex-examp
 app.go                       单体 Run，复用单服务装配
 cmd/                         精简命令入口；cmd/server 调用 application.Run
 domain/user/                 用户领域值
-application/user/query/      HTTP 与 RPC 共用的 GetUser 查询
+application/                 GetUser 查询、notes 用例和共享身份
 infrastructure/              配置、传输构造与 RPC 边界
 services/user/               app.go、私有 HTTP/RPC 适配器、cmd/user
 api/proto/user/v1/           契约源文件
@@ -59,13 +60,19 @@ APP_TOKEN 优先于原有的 API_TOKEN；servex 示例还支持 APP_GRPC_ADDRESS
 
 ## 运行
 
+源码入口读取 `SERVEX_CONTRIB_SOURCE`（默认 `../servex-contrib`），在临时 modfile
+中选择该 checkout，不会把本地 replace 写进 go.mod/go.sum。两个仓库需要版本匹配。
+
+
 ```sh
 git clone https://github.com/nostosx/servex-examples.git
 cd servex-examples
 export GOWORK=off
-go mod download
+# 使用同一变更批次中匹配的 contrib 开发版本。
+git clone https://github.com/nostosx/servex-contrib.git ../servex-contrib
+export SERVEX_CONTRIB_SOURCE="$(cd ../servex-contrib && pwd)"
 export API_TOKEN="$(openssl rand -hex 32)"
-go run ./cmd/server
+bash .github/scripts/check-source.sh -- go run ./cmd/server
 ```
 
 `API_TOKEN` 至少包含 32 个不含空白的可打印 ASCII 字符。默认监听
@@ -77,8 +84,8 @@ gRPC 要求 `authorization: Bearer <API_TOKEN>`。监听地址必须使用字面
 ```sh
 export GOWORK=off
 # 将 API_TOKEN 设置为与服务端相同的值。
-go run ./cmd/http-client
-go run ./cmd/grpc-client
+bash .github/scripts/check-source.sh -- go run ./cmd/http-client
+bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client
 curl http://127.0.0.1:8080/v1/users/7
 curl http://127.0.0.1:8080/readyz
 ```
@@ -91,9 +98,9 @@ InvalidArgument 错误。生成的 `user.v1.UserService/GetUser` RPC 返回相�
 需要独立服务入口时，替代单体宿主运行：
 
 ```sh
-go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
-go run ./cmd/http-client -target http://127.0.0.1:8100
-go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+bash .github/scripts/check-source.sh -- go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
+bash .github/scripts/check-source.sh -- go run ./cmd/http-client -target http://127.0.0.1:8100
+bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
 ```
 
 Ctrl+C 退出，就绪状态跟随应用生命周期。保留 64 KiB 请求体限制、五秒请求头超时、
@@ -103,9 +110,9 @@ Ctrl+C 退出，就绪状态跟随应用生命周期。保留 64 KiB 请求体�
 ## 检查与契约
 
 ```sh
-task check
-task lint
-task vulncheck
+bash .github/scripts/check-source.sh check
+bash .github/scripts/check-source.sh lint
+bash .github/scripts/check-source.sh vulncheck
 task api
 ```
 
@@ -117,10 +124,119 @@ task api
 默认 check 同时执行 lint，breaking 必须提供 `API_BASE`。
 
 `check` 包含默认及 integration 构建、随机顺序 race 测试，通过本地 HTTP/gRPC fixture
-检查查询、认证和退出。没有 smoke job、Python 脚本或外部服务依赖。
+检查查询、认证和退出。默认检查不依赖外部服务；显式启用的完整组合集成测试
+需要下文列出的隔离后端。
 契约开发使用 Buf 1.72.0 和固定的 nostosx-cli v1.4.0；可通过 `NOSTOSX` 指向
 从源码构建的 CLI。修改 Proto 后运行 `task api ACTION=generate`、审查生成差异并运行 `task api`。
 
 v1.1.0 标签仍标识历史源码快照，当前开发版本使用上述结构。
 参见 [贡献指南](CONTRIBUTING.md)、[发布指南](RELEASING.md)、
 [变更记录](CHANGELOG.md) 和 [安全策略](SECURITY.md)。许可证为 [MIT](LICENSE)。
+
+## 完整应用组合
+
+未发布的组合示例统一装配在 `services/user/app.go`，保留公开的
+`/v1/users/{id}` 和原有 gRPC bearer token 行为，并新增浏览器登录后的笔记应用。
+默认所有后端地址为空：笔记、Session、待完成 OAuth state 和缓存使用有容量上限的
+进程内存。没有默认用户名、密码或生产身份。
+
+以下新增 contrib API 使用上文的源码验证入口运行。先从标准输入生成自己的密码
+PHC hash，再显式启用本地 HTTP Cookie 和演示账号：
+
+```sh
+export API_TOKEN="$(openssl rand -hex 32)"
+# 在自己的 shell 中私下设置 DEMO_PASSWORD，printf 不添加换行。
+export APP_COMPOSITION__DEMO_USERNAME="demo"
+export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | bash .github/scripts/check-source.sh -- go run ./cmd/password-hash)"
+export APP_COMPOSITION__INSECURE_COOKIES=true
+bash .github/scripts/check-source.sh -- go run ./cmd/server
+```
+
+浏览器通过生产 TLS 入口访问时保持 `insecure_cookies=false`。Session Cookie
+具有 host-only、HttpOnly、SameSite=Lax 属性；密码登录轮换不透明随机 token，
+退出时删除服务端状态。密码与 OIDC 登录恢复同一种业务 Principal，笔记及对象
+操作均使用这个身份做用户隔离。
+
+本地命令行验收可以将配置好的用户名、密码作为 JSON 发给
+`POST /auth/password` 并保存响应 Cookie，再携带 Cookie 请求
+`POST /v1/notes`（`{"text":"hello"}`）、`GET /v1/notes`、
+`POST /auth/logout`。没有有效 Session 的受保护接口返回 401。
+
+| 能力 | 路由 | 启用条件 |
+| --- | --- | --- |
+| 密码登录 / 退出 | `POST /auth/password`、`POST /auth/logout` | 显式配置演示账号 / 任意 Session |
+| OIDC 跳转 / 回调 | `GET /auth/oidc`、`GET /auth/callback` | 完整 OIDC 配置 |
+| 当前身份 | `GET /v1/me` | 有效浏览器 Session |
+| 新建 / 列出笔记 | `POST /v1/notes`、`GET /v1/notes` | 有效浏览器 Session |
+| 修改 / 删除笔记 | `PUT /v1/notes/{id}`、`DELETE /v1/notes/{id}` | 笔记所属用户 |
+| 后台缓存刷新 | `POST /v1/jobs/refresh` | Redis 和浏览器 Session |
+| 最近一次刷新 | `GET /v1/jobs/last-run` | 浏览器 Session |
+| 上传 / 列出对象 | `POST /v1/objects`、`GET /v1/objects` | S3 bucket 和浏览器 Session |
+| 下载 / 删除列出的 key | `GET /v1/objects/content?key=...`、`DELETE /v1/objects/content?key=...` | S3 和对象所属用户 |
+| 获取 / 释放锁探测 | `POST /v1/coordination/probe` | Etcd endpoints 和浏览器 Session |
+| 进程指标 | `GET /metrics` | 始终启用，使用现有 loopback 监听 |
+
+`config/config.toml` 和 `services/user/config/config.toml` 的新增分组一致：
+`[composition]`、`[composition.oidc]`、`[composition.s3]`。
+文件、环境变量和显式参数的优先级保持一致。例如
+`APP_COMPOSITION__POSTGRES_DSN`、`APP_COMPOSITION__REDIS_ADDRESS`、
+`APP_COMPOSITION__S3__BUCKET` 分别覆盖对应的嵌套 TOML 值。
+凭证通过部署环境变量或私有配置文件注入，仓库配置不包含凭证。
+
+配置 `postgres_dsn` 后选择 GORM 笔记仓储。GORM Database 独占一个 SQL 连接池，
+仓储借用 `.GORM()`，显式 Goose 迁移借用 `.SQL()`。服务启动不会自动迁移。
+启动 PostgreSQL 版本之前先单独执行：
+
+```sh
+export APP_COMPOSITION__POSTGRES_DSN="postgres://..."
+bash .github/scripts/check-source.sh -- go run ./cmd/migrate
+bash .github/scripts/check-source.sh -- go run ./cmd/server
+```
+
+每次部署运行一个迁移进程。迁移在已配置的数据库内创建笔记表，不负责创建数据库。
+配置 `redis_address` 后，Session、OAuth 一次性 state、缓存及 asynq 共用一个
+Redis 客户端，均借用连接；资源作用域在消费者退出后关闭客户端。客户端使用有限
+I/O 超时并关闭传输层自动重试，保留 Session 写入结果不确定时的真实错误语义。
+`namespace` 隔离本应用的 Redis key 和队列名称。
+
+`job_schedule` 可选启用 asynq 周期入队，例如 `"@every 1m"`。worker 幂等更新缓存
+时间戳；该刷新由显式请求或调度触发，与笔记事务独立。每组任务部署一个 scheduler，
+多实例 scheduler 可能重复入队。`scheduler/cron` 适合进程本地回调，是另一种选项；
+本示例采用 Redis 周期队列，不会为同一任务重复启动两套周期调度。
+
+OIDC 需要 issuer、client ID、授权和 token URL、redirect URL，提供商要求时再配置
+client secret。回调验证 ID token 与 nonce，使用已验证 issuer 和 subject 派生
+本地用户 ID；显示名等 claim 不授予额外权限。多副本必须使用共享的 Redis Session
+与 state。HTTP loopback 提供商仅在显式启用本地开发 Cookie 选项时允许。
+
+S3 使用官方 AWS SDK v2，配置 bucket、region、凭证；兼容服务可以另外配置 endpoint。
+应用启动不创建 bucket。上传限制 64 KiB，用户 ID 的哈希形成对象 key 前缀；List
+返回相对应用命名空间的 key，可以将返回值原样交给 Get 或 Delete。客户端将该 key
+做 URL 编码后放入 `key` 查询参数；下载处理关闭 SDK 返回的 Body。
+etcd 探测获取并释放锁，只返回 acquisition revision，不执行外部写入。实际受锁
+保护的写入必须在目标资源强制校验该 revision，作为 fencing token。
+
+装配根通过 `di/do.ProvideConstructors` 注册普通的 `notes.NewService` 和 HTTP
+处理器构造函数，只在启动时解析一次入口，再直接传递依赖。业务和请求代码不使用
+容器。SDK 资源只有一个生命周期所有者；构造失败会回滚，`Runtime.Close` 在
+`App.Start` 之前调用同样能清理资源。
+
+HTTP 顺序是请求生命周期跟踪 → 共享 profile 可观测与恢复 → 可选 CORS → 标准库
+CrossOriginProtection → login/Session → 路由。`allowed_origins` 显式列出可信浏览器
+来源，同时允许这些来源通过 CSRF 检查执行写入。gRPC unary、stream 和 worker
+使用同一 profile 与 Prometheus meter；stream 链不会隐式添加消息校验、重试或
+逐消息超时。
+
+关闭时先拒绝新 HTTP 工作，等待消费者及所有原生 HTTP handler 退出，再按相反顺序
+释放共享资源。调用方的关闭 deadline 只限制等待；每个原生传输有独立的 shutdown
+预算。调用方超时后后台继续清理。永不退出的 handler 仍可能阻塞最终清理，共享依赖
+会保留到该 handler 退出。
+
+普通 HTTP 测试无需外部服务，覆盖登录、CRUD、token 轮换、跨源拒绝、退出撤销和
+清理顺序。`TestIntegrationComposition` 另外用两个实例连接一次性 PostgreSQL、
+Redis、S3 和 etcd。设置 `SERVEX_EXAMPLES_IT_POSTGRES_DSN`、
+`SERVEX_EXAMPLES_IT_REDIS_ADDR`、`SERVEX_EXAMPLES_IT_S3_ENDPOINT`、
+`SERVEX_EXAMPLES_IT_S3_BUCKET`、`SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`、
+`SERVEX_EXAMPLES_IT_S3_SECRET_KEY`、`SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS`
+（逗号分隔）后，通过源码入口运行 `test INTEGRATION=true`。
+bucket 必须使用全新名称：测试创建 bucket、删除自身对象并移除 bucket，不删除数据库或表。

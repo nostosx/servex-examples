@@ -1,15 +1,17 @@
 # servex-examples
 
-This snapshot uses published servex v1.4.0 and the independent contrib
-HTTP/configuration/logging modules, without sibling source replacements.
+This development snapshot combines published servex v1.4.0 with unreleased
+contrib composition APIs. Validate and run it against a matching servex-contrib
+source checkout through the temporary source helper below.
 
 English | [简体中文](README.zh-CN.md)
 
 A single Go application generated with nostosx-cli, then extended with a user
 query demonstrated over typed servex HTTP and generated gRPC. The module is
 `github.com/nostosx/servex-examples`; use Go 1.27.3 and Task 3.53.1.
-Snapshot v1.4.0 uses published servex v1.4.0 and grpcx v1.3.0, without sibling
-checkouts, local replacements or a go.work file.
+The historical v1.4.0 tag uses only published dependencies. The current
+development tree requires matching contrib source until those APIs are released;
+canonical module files contain no local replacements or go.work file.
 
 ## Layout and generation
 
@@ -19,7 +21,7 @@ config/config.toml           monolith process settings
 services/user/config/config.toml  standalone service settings
 cmd/                         thin command entries; cmd/server calls application.Run
 domain/user/                 domain declarations and the user value
-application/                 user/query/GetUser shared by both adapters
+application/                 user/query/GetUser, notes use cases and shared identity
 infrastructure/              configuration, server and RPC boundaries
 services/user/               app.go, private HTTP/RPC adapters and cmd/user
 api/proto/user/v1/            source contracts
@@ -67,13 +69,20 @@ Give each service process its own file path; close the logger after its users st
 
 ## Run
 
+The helper reads `SERVEX_CONTRIB_SOURCE` (default `../servex-contrib`) and
+uses a temporary modfile to select that checkout. It never writes local
+replacements into go.mod/go.sum. Keep the checkout versions aligned.
+
+
 ```sh
 git clone https://github.com/nostosx/servex-examples.git
 cd servex-examples
 export GOWORK=off
-go mod download
+# Use the matching contrib development revision from the same change set.
+git clone https://github.com/nostosx/servex-contrib.git ../servex-contrib
+export SERVEX_CONTRIB_SOURCE="$(cd ../servex-contrib && pwd)"
 export API_TOKEN="$(openssl rand -hex 32)"
-go run ./cmd/server
+bash .github/scripts/check-source.sh -- go run ./cmd/server
 ```
 `API_TOKEN` must contain at least 32 printable ASCII characters without whitespace.
 The default listeners are `127.0.0.1:8080` and `127.0.0.1:9090`.
@@ -85,8 +94,8 @@ In a second terminal, set the same token and run:
 ```sh
 export GOWORK=off
 # Set API_TOKEN to the same value as the server.
-go run ./cmd/http-client
-go run ./cmd/grpc-client
+bash .github/scripts/check-source.sh -- go run ./cmd/http-client
+bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client
 curl http://127.0.0.1:8080/v1/users/7
 curl http://127.0.0.1:8080/readyz
 ```
@@ -99,9 +108,9 @@ RPC returns the same data and rejects unauthenticated requests.
 To run the independently deployable service instead of the combined host:
 
 ```sh
-go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
-go run ./cmd/http-client -target http://127.0.0.1:8100
-go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
+bash .github/scripts/check-source.sh -- go run ./services/user/cmd/user -addr 127.0.0.1:8100 -grpc-addr 127.0.0.1:9100
+bash .github/scripts/check-source.sh -- go run ./cmd/http-client -target http://127.0.0.1:8100
+bash .github/scripts/check-source.sh -- go run ./cmd/grpc-client -target grpc://127.0.0.1:9100
 ```
 
 Stop with Ctrl+C. Readiness follows the application lifecycle. HTTP retains the
@@ -112,9 +121,9 @@ Connections are plaintext; add TLS and application authorization before external
 ## Checks and contracts
 
 ```sh
-task check
-task lint
-task vulncheck
+bash .github/scripts/check-source.sh check
+bash .github/scripts/check-source.sh lint
+bash .github/scripts/check-source.sh vulncheck
 task api
 ```
 
@@ -127,7 +136,8 @@ This repository also exposes `task api ACTION=generate|lint|check|breaking`;
 
 `check` includes normal and integration builds and shuffled race tests with local
 HTTP/gRPC fixtures. It exercises both user adapters, gRPC authentication and shutdown.
-There are no smoke jobs, Python scripts or external-service requirements.
+Default checks need no external services. The explicitly enabled composition
+integration test requires disposable backends as described below.
 Contract development uses Buf 1.72.0 and pinned nostosx-cli v1.4.0; use `NOSTOSX`
 to select a CLI binary built from a checkout. Run `task api ACTION=generate`, review the
 generated diff, then `task api` after editing Proto sources.
@@ -135,3 +145,130 @@ generated diff, then `task api` after editing Proto sources.
 The v1.1.0 tag remains a historical source snapshot; development uses the layout
 described here. See [CONTRIBUTING.md](CONTRIBUTING.md), [RELEASING.md](RELEASING.md),
 [CHANGELOG.md](CHANGELOG.md) and [SECURITY.md](SECURITY.md). Licensed under [MIT](LICENSE).
+
+## Composed application
+
+The unreleased composition is assembled in `services/user/app.go`. It keeps the
+original public `/v1/users/{id}` and gRPC bearer token behavior, and adds a small
+notes application behind browser login. Backend addresses are empty by default:
+notes, browser sessions, pending OAuth states and cache stay in bounded local
+memory. Login has no default username, password or trusted identity.
+
+Use the source validation helper described above for these unreleased contrib
+APIs. Generate your own password hash from stdin, then explicitly enable local
+HTTP cookies and a demonstration account:
+
+```sh
+export API_TOKEN="$(openssl rand -hex 32)"
+# Set DEMO_PASSWORD privately in your shell; printf does not add a newline.
+export APP_COMPOSITION__DEMO_USERNAME="demo"
+export APP_COMPOSITION__DEMO_PASSWORD_HASH="$(printf %s "$DEMO_PASSWORD" | bash .github/scripts/check-source.sh -- go run ./cmd/password-hash)"
+export APP_COMPOSITION__INSECURE_COOKIES=true
+bash .github/scripts/check-source.sh -- go run ./cmd/server
+```
+
+Keep `insecure_cookies=false` when a TLS terminator serves the application to a
+browser. Session cookies are host-only, HttpOnly and SameSite=Lax. Password
+sign-in rotates the opaque token; logout deletes server-side state. OIDC and
+password login restore the same typed application Principal before routing.
+All notes and object operations use that Principal to isolate users.
+
+For a local command-line roundtrip, send the configured password as JSON to
+`POST /auth/password` and save the response cookie, then use it with `POST
+/v1/notes` (`{"text":"hello"}`), `GET /v1/notes` and `POST /auth/logout`.
+A request without a valid session receives 401 on the protected routes.
+
+| Operation | Route | Enabled when |
+| --- | --- | --- |
+| Password sign-in / sign-out | `POST /auth/password`, `POST /auth/logout` | Explicit demo account / any session |
+| OIDC redirect / callback | `GET /auth/oidc`, `GET /auth/callback` | Complete OIDC configuration |
+| Current identity | `GET /v1/me` | Valid browser session |
+| Create / list notes | `POST /v1/notes`, `GET /v1/notes` | Valid browser session |
+| Update / delete note | `PUT /v1/notes/{id}`, `DELETE /v1/notes/{id}` | Owner of the note |
+| Background cache refresh | `POST /v1/jobs/refresh` | Redis and browser session |
+| Last completed refresh | `GET /v1/jobs/last-run` | Browser session |
+| Upload / list objects | `POST /v1/objects`, `GET /v1/objects` | S3 bucket and browser session |
+| Download / delete listed key | `GET /v1/objects/content?key=...`, `DELETE /v1/objects/content?key=...` | S3 and owner of the key |
+| Acquire / release lock probe | `POST /v1/coordination/probe` | Etcd endpoints and browser session |
+| Process metrics | `GET /metrics` | Always, on the existing loopback listener |
+
+`config/config.toml` and `services/user/config/config.toml` carry matching
+`[composition]`, `[composition.oidc]` and `[composition.s3]` groups. The existing
+file/env/flag precedence remains. For example, `APP_COMPOSITION__POSTGRES_DSN`,
+`APP_COMPOSITION__REDIS_ADDRESS` and `APP_COMPOSITION__S3__BUCKET` override their
+nested TOML values. Supply credentials through deployment environment or a
+private configuration file; the checked-in files contain no credentials.
+
+Setting `postgres_dsn` selects the GORM notes repository. The GORM Database owns
+one connection pool: repositories borrow `.GORM()` and the explicit Goose
+migration entry borrows `.SQL()`. Serving never migrates automatically. Run the
+migration command before starting a configured PostgreSQL instance:
+
+```sh
+export APP_COMPOSITION__POSTGRES_DSN="postgres://..."
+bash .github/scripts/check-source.sh -- go run ./cmd/migrate
+bash .github/scripts/check-source.sh -- go run ./cmd/server
+```
+
+Run one migration process per deployment. The migration command creates the
+notes table in the configured database, and does not create a database itself.
+Setting `redis_address` switches Session, OAuth one-time state and cache to
+borrow one Redis client; asynq borrows that same client. Its finite I/O timeouts
+and disabled transport retries preserve uncertain session mutation outcomes.
+The resource scope closes the client after its consumers stop. The `namespace`
+separates this application's Redis keys and queue name from other applications.
+
+`job_schedule` optionally configures asynq periodic enqueueing, for example
+`"@every 1m"`. The worker records an idempotent timestamp in cache. This refresh
+is explicitly requested or scheduled, and is independent of note transactions.
+Deploy one scheduler per schedule set: multiple schedulers can enqueue duplicate
+jobs. An in-process `scheduler/cron` hook is an alternative for process-local
+callbacks; this example uses the Redis-backed scheduler and does not also run
+a second periodic scheduler for the same task.
+
+OIDC requires issuer, client ID, authorization/token URLs and redirect URL; add
+a client secret when required by the provider. The callback verifies the ID token
+and nonce, then derives the local user ID from the verified issuer and subject.
+Display claims grant no additional permissions. Use Redis for Session and state
+when serving multiple replicas. HTTP loopback providers are permitted only
+with the explicit local development cookie option.
+
+S3 uses the official AWS SDK v2. Configure bucket, region and credentials, plus
+an optional endpoint for an S3-compatible service. The application does not
+create buckets on startup. Uploads are limited to 64 KiB. User IDs are hashed
+into key prefixes; List returns keys relative to the application namespace so
+the exact returned key can be passed to Get or Delete. Clients URL-encode that
+key in the `key` query parameter. The download path closes the returned body.
+The etcd probe returns an acquisition revision and releases the lock without an
+external write. Real protected writes must enforce the revision as a fencing
+token in the protected resource.
+
+The root registers ordinary `notes.NewService` and HTTP handler constructors
+through `di/do.ProvideConstructors`, resolves the entry once, then passes concrete
+dependencies to handlers. The container does not appear in application logic or
+requests. SDK connections have one owner in the lifecycle scope. `Build` rolls
+back constructor failures; `Runtime.Close` also works before `App.Start`.
+
+Native HTTP order is request lifetime tracking → shared profile observability
+and recovery → optional CORS → standard CrossOriginProtection → login/Session →
+routing. Trusted browser origins are explicit in `allowed_origins`; they also
+permit CSRF-checked writes from those origins. gRPC unary/stream handlers and
+workers reuse the same profile and Prometheus meter. Stream chains never add
+message validation, retry or per-message timeout implicitly.
+
+Close rejects new HTTP work, joins consumers and in-flight native handlers,
+then releases shared resources in reverse order. A caller's close deadline only
+bounds its wait; each native transport receives its own shutdown budget. Cleanup
+continues after the caller returns. A handler that never cooperates can keep
+cleanup waiting; dependencies remain open until that handler exits.
+
+The ordinary HTTP suite covers login, CRUD, token rotation, cross-origin
+rejection, logout revocation and cleanup ordering without external services.
+`TestIntegrationComposition` additionally uses two instances against disposable
+PostgreSQL, Redis, S3 and etcd. Set `SERVEX_EXAMPLES_IT_POSTGRES_DSN`,
+`SERVEX_EXAMPLES_IT_REDIS_ADDR`, `SERVEX_EXAMPLES_IT_S3_ENDPOINT`,
+`SERVEX_EXAMPLES_IT_S3_BUCKET`, `SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`,
+`SERVEX_EXAMPLES_IT_S3_SECRET_KEY` and `SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS` (comma
+separated), then run the source helper with `test INTEGRATION=true`. Supply a
+fresh bucket name: the test creates that bucket, deletes its own objects and
+removes it. The test never drops a database or table.

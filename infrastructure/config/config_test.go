@@ -209,3 +209,33 @@ func TestLoadExampleFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadCompositionFileAndEnvironment(t *testing.T) {
+	clearConfigEnv(t)
+	t.Setenv("API_TOKEN", strings.Repeat("a", 32))
+	path := filepath.Join(t.TempDir(), "config.toml")
+	content := `[composition]
+postgres_dsn = "postgres://from-file"
+redis_address = "127.0.0.1:6379"
+demo_username = "demo"
+demo_password_hash = "explicit-hash"
+insecure_cookies = true
+allowed_origins = ["http://127.0.0.1:3000"]
+[composition.s3]
+bucket = "notes"
+access_key = "test-key"
+secret_key = "test-secret"
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("APP_COMPOSITION__POSTGRES_DSN", "postgres://from-env")
+	cfg, err := Load(t.Context(), "test", path, []string{"--config", path}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := cfg.Composition
+	if c.PostgresDSN != "postgres://from-env" || c.RedisAddress != "127.0.0.1:6379" || !c.InsecureCookies || c.DemoUsername != "demo" || c.S3.Bucket != "notes" || len(c.AllowedOrigins) != 1 {
+		t.Fatalf("nested configuration not preserved: %+v", c)
+	}
+}
