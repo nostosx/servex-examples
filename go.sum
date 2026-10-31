@@ -111,8 +111,8 @@ github.com/ncruces/go-strftime v1.1.0 h1:vtPmPWMkb539RGV9WpWT9EwJGvrOCKvMNI4obWL
 github.com/ncruces/go-strftime v1.1.0/go.mod h1:yVaq7iwCN09vHRrKBrrflXT0M9tTMG2KmZ9Fj7xeG/g=
 github.com/nostosx/kitx v1.0.0 h1:EMfdh57DXbW+FPZD9/e+Mrxju1qx6EyEjrotpR+nso0=
 github.com/nostosx/kitx v1.0.0/go.mod h1:zNZAYv7ZyA2UkijHptpgnsSQKMmWIHp9E0e2TGBgDZE=
-github.com/nostosx/servex v1.4.0 h1:0B8SjcbBuIxAkygTsbZKFtBZ7QJ7k4od8s3G5xWqpWc=
-github.com/nostosx/servex v1.4.0/go.mod h1:tOSGFq4M6GVGGsm7SHTNd8SGCr0Kd3YsJ+9abwAA/Cw=
+github.com/nostosx/servex v1.5.0 h1:y6t7HxIijCCvtDnHcfDbqcBEtmCmRcMYTEN6RIvUL9Y=
+github.com/nostosx/servex v1.5.0/go.mod h1:tOSGFq4M6GVGGsm7SHTNd8SGCr0Kd3YsJ+9abwAA/Cw=
 github.com/nostosx/servex-contrib/auth/login v1.0.0 h1:sszD4dnc/hZ2xnC1bfjBWHIn4ejwzoueW/HzNVC7atc=
 github.com/nostosx/servex-contrib/auth/login v1.0.0/go.mod h1:wiPFCr+c4m0WnpWXmnKWZ0agq637/6N+I+Nd09TnoYI=
 github.com/nostosx/servex-contrib/auth/oauth2 v1.0.0 h1:9JI1hA0kdiRX/SFcpX8d+CCNf0mA59CroZAoYmXIINU=
@@ -137,6 +137,8 @@ github.com/nostosx/servex-contrib/database/goose v1.0.0 h1:axsRIC8YCIY40Rym2ewrA
 github.com/nostosx/servex-contrib/database/goose v1.0.0/go.mod h1:xJtN1D9HpPYcbuWr7AYyydAu7eFCzB7+axnrtIvGTlU=
 github.com/nostosx/servex-contrib/database/gorm v1.0.0 h1:EyzLRdXTN5TIWekxNFNouQKbA1JVFk6OwdiLiVLFSDA=
 github.com/nostosx/servex-contrib/database/gorm v1.0.0/go.mod h1:R3hQjqzqG5Byn3vzaI4laa+qwUtRz+xb2lLKK1vw+So=
+github.com/nostosx/servex-contrib/database/postgres v1.0.0 h1:VVYaNHChUkBs8kS1y2ndZcvWpDMQ2ynsdfGaLuKuU+4=
+github.com/nostosx/servex-contrib/database/postgres v1.0.0/go.mod h1:C0NcY2FhvsXVLduEdlRfMusdA+Hp3CWw2eDxFzSIpJs=
 github.com/nostosx/servex-contrib/database/sql v1.0.0 h1:eEvkAFeLFQWJ8+KPGDzYr4bBvwgFGSQpzdSeac/AEhY=
 github.com/nostosx/servex-contrib/database/sql v1.0.0/go.mod h1:eaouNRfm+YhQpvLElnHo4+4/WzJtgkv8n9DzqnCsX4E=
 github.com/nostosx/servex-contrib/di/do v1.2.0 h1:39uCMWnKYSbyJXaFiUWzwgKnidEUVEtC4LK29reDaRk=
@@ -147,6 +149,8 @@ github.com/nostosx/servex-contrib/encoding/json v1.0.0 h1:da89iNLzSeERrNL7FmU60z
 github.com/nostosx/servex-contrib/encoding/json v1.0.0/go.mod h1:cpQdP+vdLba69lDsEK7fphFoE1+m+51gUi9tTMWJBgA=
 github.com/nostosx/servex-contrib/jobqueue/asynq v1.3.0 h1:DsmbU0F5YbJ5GRNhDmiMcXL1YfepIFHEHhkCWIKgV5k=
 github.com/nostosx/servex-contrib/jobqueue/asynq v1.3.0/go.mod h1:NdbiOzm/ctcWEpew9Q/ZYTi8uCVkgjqzIQJy52x/06s=
+github.com/nostosx/servex-contrib/jobqueue/pgmq v1.0.0 h1:B9YhrOhGSO3EuIgXGMlH9uVnSKoQsXR3x2DaHFn2vOs=
+github.com/nostosx/servex-contrib/jobqueue/pgmq v1.0.0/go.mod h1:5s8aztQUDN7413lpQbc1xuw31RD7jTFv/8ZoLqVRCHE=
 github.com/nostosx/servex-contrib/lifecycle v1.0.0 h1:rPs4mr1Ig8uCv67kDxqx67TfCkD5tWIo/tjpAIYJCS8=
 github.com/nostosx/servex-contrib/lifecycle v1.0.0/go.mod h1:/xrrMSETogrHMEJb7uMa+K+g8qf3xBC4pTq77/zhITs=
 github.com/nostosx/servex-contrib/logger/zap v1.0.0 h1:gPew/eklLaysH6ev6aF2Cs0JwnCoKMdwc4giXldTwQA=
@@ -157,6 +161,8 @@ github.com/nostosx/servex-contrib/metrics/prometheus v1.2.0 h1:jAPCNocBjnJcWyleJ
 github.com/nostosx/servex-contrib/metrics/prometheus v1.2.0/go.mod h1:pWwMmL9MSyZLZwqXqJffr6qA8p7ODZ3luUJmdGLqlE4=
 github.com/nostosx/servex-contrib/middleware v1.5.0 h1:90/bif6vNNDP5lz7sYUL5jD7TZoPwEgMivkvs1vvCps=
 github.com/nostosx/servex-contrib/middleware v1.5.0/go.mod h1:FbMDCYC08FKeeTfCt/rGQYz9LxPrs2AL3Xw5dJO0ZuY=
+github.com/nostosx/servex-contrib/search/postgres v1.0.0 h1:O+92AHQBa+1Z8F9aGzpYhmVIRDnH9/N4RfUUQvj/iFo=
+github.com/nostosx/servex-contrib/search/postgres v1.0.0/go.mod h1:+2t1J9INP8AB5nMpy2iux3z5+JbUvROoq9S5Uhs2T08=
 github.com/nostosx/servex-contrib/selector v1.2.0 h1:9eu6AjWvr42OGSmrr3w3xBuCaQFv0BFoT5WojT9Qa68=
 github.com/nostosx/servex-contrib/selector v1.2.0/go.mod h1:xSGo8N90YDUbNh53s3GtrjBeVuzUj9SCrKkfLSFgEsk=
 github.com/nostosx/servex-contrib/session v1.0.0 h1:4nuPViw10ZskNy3/JDJBYagCBvIiIW72bp7Bq1330oo=
@@ -173,8 +179,10 @@ github.com/nostosx/servex-contrib/transport/cors v1.0.0 h1:G6716FUkCv0WIWQ2LWDBX
 github.com/nostosx/servex-contrib/transport/cors v1.0.0/go.mod h1:AmXS8IR56SQdmvWl37zK+2tun9Sl8r7eaNddg3tKcqI=
 github.com/nostosx/servex-contrib/transport/grpcx v1.3.0 h1:aifLrQkcfXglYiDrFk3115PKumRTIDy5PwwLTpkV5TY=
 github.com/nostosx/servex-contrib/transport/grpcx v1.3.0/go.mod h1:shPSI2UGCT+MuvhLJHY9/DAcX3fCvvOSs53REe63ZVY=
-github.com/nostosx/servex-contrib/transport/httpx v1.0.0 h1:ysZJtLGlKjlEcUgiBdeurplRXO1bqNs4LDnjE3VGIJY=
-github.com/nostosx/servex-contrib/transport/httpx v1.0.0/go.mod h1:RpO8F3fNJiuPPYB+tTUx3oznQK2fM60mavuCy8AT3EQ=
+github.com/nostosx/servex-contrib/transport/httpx v1.1.0 h1:2W+hxIVb1N0XXXZQ/UtS9cuS9bicIVDFCjNbZz2lJx8=
+github.com/nostosx/servex-contrib/transport/httpx v1.1.0/go.mod h1:RpO8F3fNJiuPPYB+tTUx3oznQK2fM60mavuCy8AT3EQ=
+github.com/nostosx/servex-contrib/vector/pgvector v1.0.0 h1:JWHSXZfuk5NxU/gGT2HfcBQK71VVMY6/kV7QVjXoSfI=
+github.com/nostosx/servex-contrib/vector/pgvector v1.0.0/go.mod h1:RyNq257KvttEJD4VX+Ueoty1ryYkTB667uPf6cHS1XU=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

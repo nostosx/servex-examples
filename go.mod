@@ -7,7 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.12
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.6
 	github.com/hibiken/asynq v0.26.0
-	github.com/nostosx/servex v1.4.0
+	github.com/jackc/pgx/v5 v5.11.0
+	github.com/nostosx/servex v1.5.0
 	github.com/nostosx/servex-contrib/auth/login v1.0.0
 	github.com/nostosx/servex-contrib/auth/oauth2 v1.0.0
 	github.com/nostosx/servex-contrib/auth/oauth2redis v1.0.0
@@ -19,18 +20,22 @@ require (
 	github.com/nostosx/servex-contrib/coordination/etcd v1.0.0
 	github.com/nostosx/servex-contrib/database/goose v1.0.0
 	github.com/nostosx/servex-contrib/database/gorm v1.0.0
+	github.com/nostosx/servex-contrib/database/postgres v1.0.0
 	github.com/nostosx/servex-contrib/di/do v1.2.0
 	github.com/nostosx/servex-contrib/jobqueue/asynq v1.3.0
+	github.com/nostosx/servex-contrib/jobqueue/pgmq v1.0.0
 	github.com/nostosx/servex-contrib/lifecycle v1.0.0
 	github.com/nostosx/servex-contrib/logger/zap v1.0.0
 	github.com/nostosx/servex-contrib/metrics/prometheus v1.2.0
 	github.com/nostosx/servex-contrib/middleware v1.5.0
+	github.com/nostosx/servex-contrib/search/postgres v1.0.0
 	github.com/nostosx/servex-contrib/session v1.0.0
 	github.com/nostosx/servex-contrib/session/redis v1.0.0
 	github.com/nostosx/servex-contrib/storage/s3 v1.0.0
 	github.com/nostosx/servex-contrib/transport/cors v1.0.0
 	github.com/nostosx/servex-contrib/transport/grpcx v1.3.0
-	github.com/nostosx/servex-contrib/transport/httpx v1.0.0
+	github.com/nostosx/servex-contrib/transport/httpx v1.1.0
+	github.com/nostosx/servex-contrib/vector/pgvector v1.0.0
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/redis/go-redis/v9 v9.23.0
@@ -67,7 +72,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.11.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
