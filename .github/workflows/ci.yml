@@ -100,6 +100,7 @@ jobs:
     timeout-minutes: 20
     env:
       SERVEX_EXAMPLES_IT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=servex password=servex dbname=servex_it sslmode=disable
+      SERVEX_EXAMPLES_IT_INDEX_POSTGRES_DSN: postgres://postgres@127.0.0.1:55432/servex_index?sslmode=disable
       SERVEX_EXAMPLES_IT_REDIS_ADDR: 127.0.0.1:6379
       SERVEX_EXAMPLES_IT_S3_ENDPOINT: http://127.0.0.1:9000
       SERVEX_EXAMPLES_IT_S3_BUCKET: servex-composition-it
@@ -141,12 +142,35 @@ jobs:
             sleep 1
           done
           test "$ready" = 1
+      - name: Start owned transactional index database
+        run: |
+          docker run -d --name servex-example-index-postgres -p 127.0.0.1:55432:5432 \
+            -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=servex_index \
+            pgvector/pgvector:0.8.7-pg17
+          curl --retry 3 -fsSL https://raw.githubusercontent.com/pgmq/pgmq/v1.13.1/pgmq-extension/pgmq.control -o "$RUNNER_TEMP/pgmq.control"
+          curl --retry 3 -fsSL https://raw.githubusercontent.com/pgmq/pgmq/v1.13.1/pgmq-extension/sql/pgmq.sql -o "$RUNNER_TEMP/pgmq--1.13.1.sql"
+          docker cp "$RUNNER_TEMP/pgmq.control" servex-example-index-postgres:/usr/share/postgresql/17/extension/pgmq.control
+          docker cp "$RUNNER_TEMP/pgmq--1.13.1.sql" servex-example-index-postgres:/usr/share/postgresql/17/extension/pgmq--1.13.1.sql
+          ready=0
+          for _ in {1..60}; do
+            if docker exec servex-example-index-postgres psql -h 127.0.0.1 -U postgres -d servex_index -c 'SELECT 1' >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1
+          docker exec servex-example-index-postgres psql -U postgres -d servex_index -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION vector; CREATE EXTENSION pgmq'
       - name: Verify application composition without skipped tests
         run: task test INTEGRATION=true
+      - name: Run the transactional indexing command
+        env:
+          SERVEX_DEMO_POSTGRES_DSN: postgres://postgres@127.0.0.1:55432/servex_index?sslmode=disable
+          SERVEX_DEMO_POSTGRES_SCHEMA: sx_demo_ci
+        run: |
+          output=$(go run ./cmd/postgres-demo)
+          test "$output" = '{"vector_hits":1,"text_hits":1}'
       - name: Remove owned integration services
         if: always()
         run: |
-          for container in servex-example-postgres servex-example-redis servex-example-s3 servex-example-etcd; do
+          for container in servex-example-index-postgres servex-example-postgres servex-example-redis servex-example-s3 servex-example-etcd; do
             if docker container inspect "$container" >/dev/null 2>&1; then
               docker rm -f -v "$container"
             fi

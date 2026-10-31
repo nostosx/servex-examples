@@ -39,7 +39,8 @@ coverage. Tests always shuffle and disable result caching. `check` reuses the
 same test task with race detection enabled.
 `task test INTEGRATION=true` runs the real
 application composition with race detection and rejects missing configuration,
-absent/skipped/failed or unfinished integration tests. Supply all seven variables:
+absent/skipped/failed or unfinished integration tests. Supply the existing seven composition variables plus
+`SERVEX_EXAMPLES_IT_INDEX_POSTGRES_DSN` for the vector/PGMQ fixture:
 `SERVEX_EXAMPLES_IT_POSTGRES_DSN`, `SERVEX_EXAMPLES_IT_REDIS_ADDR`,
 `SERVEX_EXAMPLES_IT_S3_ENDPOINT`, `SERVEX_EXAMPLES_IT_S3_BUCKET`,
 `SERVEX_EXAMPLES_IT_S3_ACCESS_KEY`, `SERVEX_EXAMPLES_IT_S3_SECRET_KEY`, and
@@ -93,3 +94,7 @@ and a missing breaking baseline fail before invoking the CLI.
 Source checks for this snapshot do not establish public module installation.
 After coordinated publication, update the changed module requirements and verify
 standalone consumers without temporary overrides or sibling replacements.
+
+PostgreSQL examples use an owned vector-enabled database and the existing
+`task test INTEGRATION=true` gate. See [POSTGRESQL.md](POSTGRESQL.md) for
+configuration, explicit migrations, cleanup and required real-service behavior.

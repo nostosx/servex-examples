@@ -42,6 +42,7 @@ func TestIntegrationGate(t *testing.T) {
 	root := filepath.Clean(filepath.Join(filepath.Dir(source), "../../.."))
 	config := []string{
 		"SERVEX_EXAMPLES_IT_POSTGRES_DSN=fixture-postgres",
+		"SERVEX_EXAMPLES_IT_INDEX_POSTGRES_DSN=fixture-index-postgres",
 		"SERVEX_EXAMPLES_IT_REDIS_ADDR=fixture-redis",
 		"SERVEX_EXAMPLES_IT_S3_ENDPOINT=fixture-s3",
 		"SERVEX_EXAMPLES_IT_S3_BUCKET=fixture-bucket",
@@ -49,7 +50,7 @@ func TestIntegrationGate(t *testing.T) {
 		"SERVEX_EXAMPLES_IT_S3_SECRET_KEY=fixture-placeholder",
 		"SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS=fixture-etcd",
 	}
-	valid := []event{{Action: "run", Test: "TestIntegrationComposition"}, {Action: "pass", Test: "TestIntegrationComposition"}}
+	valid := []event{{Action: "run", Test: "TestIntegrationComposition"}, {Action: "pass", Test: "TestIntegrationComposition"}, {Action: "run", Test: "TestIntegrationTransactionalIndex"}, {Action: "pass", Test: "TestIntegrationTransactionalIndex"}}
 	goTool := os.Getenv("GO")
 	if goTool == "" {
 		var err error

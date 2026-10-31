@@ -1,6 +1,10 @@
 # servex-examples
 
-v1.5.0 快照组合已发布的 servex 与独立版本的 contrib 模块，提供可运行的
+[PostgreSQL 事务索引示例](POSTGRESQL.md)：组合业务写入、PGMQ、向量和全文索引，明确事务边界，并验收失败回滚与重复投递。
+
+
+
+v1.6.0 快照组合已发布的 servex 与独立版本的 contrib 模块，提供可运行的
 HTTP/gRPC、类型化 CQRS、浏览器登录和笔记应用。
 
 [English](README.md) | 简体中文

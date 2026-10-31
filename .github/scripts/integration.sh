@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Call through check-source.sh until the matching composition modules publish.
+# Real application acceptance; all dependencies resolve published versions.
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-for required in SERVEX_EXAMPLES_IT_POSTGRES_DSN SERVEX_EXAMPLES_IT_REDIS_ADDR \
+for required in SERVEX_EXAMPLES_IT_POSTGRES_DSN SERVEX_EXAMPLES_IT_INDEX_POSTGRES_DSN SERVEX_EXAMPLES_IT_REDIS_ADDR \
   SERVEX_EXAMPLES_IT_S3_ENDPOINT SERVEX_EXAMPLES_IT_S3_BUCKET \
   SERVEX_EXAMPLES_IT_S3_ACCESS_KEY SERVEX_EXAMPLES_IT_S3_SECRET_KEY \
   SERVEX_EXAMPLES_IT_ETCD_ENDPOINTS; do

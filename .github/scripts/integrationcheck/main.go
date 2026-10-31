@@ -59,6 +59,18 @@ func validate(input io.Reader) (int, error) {
 	if len(passed) == 0 || len(failed) != 0 || len(skipped) != 0 || unfinished != 0 {
 		return 0, fmt.Errorf("integration results invalid: %d passed, %d failed, %d skipped, %d unfinished", len(passed), len(failed), len(skipped), unfinished)
 	}
+	for _, required := range []string{"TestIntegrationComposition", "TestIntegrationTransactionalIndex"} {
+		found := false
+		for key := range passed {
+			if key.Test == required {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return 0, fmt.Errorf("missing successful integration suite: %s", required)
+		}
+	}
 	return len(passed), nil
 }
 

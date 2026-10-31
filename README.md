@@ -1,6 +1,10 @@
 # servex-examples
 
-The v1.5.0 snapshot composes published servex and independently versioned contrib
+[Transactional PostgreSQL indexing](POSTGRESQL.md) composes business writes, PGMQ and vector/text indexes with explicit caller-owned transactions and real rollback acceptance.
+
+
+
+The v1.6.0 snapshot composes published servex and independently versioned contrib
 modules into a runnable HTTP/gRPC application with typed CQRS, login and notes.
 
 English | [简体中文](README.zh-CN.md)

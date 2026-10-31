@@ -3,6 +3,11 @@
 Snapshot versions identify example source and dependencies; they do not
 establish a stable library API.
 
+## v1.6.0 - 2026-10-31
+
+- Add a transactional PostgreSQL indexing application: commit business document and PGMQ enqueue together, atomically update vector/text indexes, and verify duplicate reservations, repeated delivery and cross-index rollback.
+- Select published Servex v1.5.0 and PostgreSQL contrib v1.0.0 dependencies; document owned demo resources and add required real PostgreSQL CI acceptance.
+
 ## v1.5.0 - 2026-10-31
 
 - Name service-private application types Command/Query in command.go/query.go and keep them separate from protocol adapters. Construct individual use cases in app.go, compose CQRS chains in handler aggregates, and inject handler aggregates into protocol boundaries.
